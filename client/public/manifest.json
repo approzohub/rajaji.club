@@ -1,0 +1,26 @@
+{
+  "name": "PlayWin - Card Game",
+  "short_name": "PlayWin",
+  "description": "Play exciting card games and win big with PlayWin. Join the ultimate gaming experience with Raja Ji.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#091222",
+  "theme_color": "#02C060",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "32x32",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": ["games", "entertainment"],
+  "lang": "en",
+  "dir": "ltr"
+} 

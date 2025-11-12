@@ -1,0 +1,407 @@
+import { Box, Typography, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem } from '@mui/material';
+import { DataGrid } from '@mui/x-data-grid';
+import type { GridColDef } from '@mui/x-data-grid';
+import { useGetWalletsQuery, useRechargeWalletMutation, useManualDebitMutation, useGetUserTransactionsQuery } from '../api/walletApi';
+import { useGetUsersQuery } from '../api/usersApi';
+import Autocomplete from '@mui/material/Autocomplete';
+import { useForm, Controller } from 'react-hook-form';
+import { useAuth } from '../auth';
+import { useState } from 'react';
+
+const walletTypes = [
+  { value: 'main', label: 'Main' },
+  { value: 'bonus', label: 'Bonus' },
+];
+
+export default function WalletPage() {
+  const { data: wallets = [], isLoading, error, refetch } = useGetWalletsQuery();
+  const [rechargeWallet] = useRechargeWalletMutation();
+  const [manualDebit] = useManualDebitMutation();
+  const [rechargeOpen, setRechargeOpen] = useState(false);
+  const [debitOpen, setDebitOpen] = useState(false);
+  const [transactionModalOpen, setTransactionModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const { data: users = [] } = useGetUsersQuery();
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting }, control } = useForm<WalletFormData>();
+  
+  // Get current user from auth context
+  const { user: currentUser } = useAuth();
+
+  // Get transactions for selected user
+  const { data: userTransactions = [], isLoading: transactionsLoading } = useGetUserTransactionsQuery(
+    selectedUserId || '',
+    { skip: !selectedUserId }
+  );
+
+  // Determine page title based on user role
+  const getPageTitle = () => {
+    if (currentUser?.role === 'agent') {
+      return 'My Users Wallets';
+    }
+    return 'Wallet';
+  };
+
+  // Filter users based on role
+  const getAvailableUsers = () => {
+    if (currentUser?.role === 'admin') {
+      return users;
+    } else if (currentUser?.role === 'agent') {
+      // Agents can only see their assigned users
+      return users.filter(user => user.assignedAgent === currentUser.id);
+    }
+    return [];
+  };
+
+  const availableUsers = getAvailableUsers();
+
+  const columns: GridColDef[] = [
+    { field: 'userName', headerName: 'User', flex: 1, minWidth: 150 },
+    { field: 'userEmail', headerName: 'Email', flex: 1, minWidth: 200 },
+    { field: 'userRole', headerName: 'Role', flex: 1, minWidth: 100 },
+    { field: 'main', headerName: 'Main Balance', flex: 1, minWidth: 120, renderCell: (params: { value?: number }) => `₹${params.value || 0}` },
+    { field: 'bonus', headerName: 'Bonus Balance', flex: 1, minWidth: 120, renderCell: (params: { value?: number }) => `₹${params.value || 0}` },
+    { field: 'totalBalance', headerName: 'Total Balance', flex: 1, minWidth: 120, renderCell: (params: { row?: { main?: number; bonus?: number } }) => {
+      const main = params.row?.main || 0;
+      const bonus = params.row?.bonus || 0;
+      return `₹${main + bonus}`;
+    } },
+    { field: 'updatedAt', headerName: 'Last Updated', flex: 1, minWidth: 180, renderCell: (params: { value?: string }) => {
+      return params.value ? new Date(params.value).toLocaleString() : '';
+    } },
+  ];
+
+  // Debug log to see the data
+  // React.useEffect(() => {
+  //   console.log('Transactions data:', transactions);
+  // }, [transactions]);
+
+  const handleRowClick = (params: { row: { user: { _id: string } } }) => {
+    setSelectedUserId(params.row.user._id);
+    setTransactionModalOpen(true);
+  };
+
+  const handleCloseTransactionModal = () => {
+    setTransactionModalOpen(false);
+    setSelectedUserId(null);
+  };
+
+  const getTransactionColor = (type: string) => {
+    return type === 'debit' ? 'error.main' : 'success.main';
+  };
+
+  const getTransactionIcon = (type: string) => {
+    return type === 'debit' ? '↓' : '↑';
+  };
+
+  interface WalletFormData {
+    userId: string;
+    amount: number;
+    walletType: string;
+    note?: string;
+  }
+
+  const onRecharge = async (data: WalletFormData) => {
+    setFormError(null);
+    try {
+      await rechargeWallet({ ...data, amount: Number(data.amount) }).unwrap();
+      setRechargeOpen(false);
+      reset();
+      refetch();
+    } catch (e: unknown) {
+      const apiError = (e as { data?: { error?: string }; error?: string })?.data?.error || (e as { error?: string })?.error || 'Failed to recharge wallet';
+      setFormError(apiError);
+    }
+  };
+
+  const onManualDebit = async (data: WalletFormData) => {
+    setFormError(null);
+    try {
+      await manualDebit({ ...data, amount: Number(data.amount) }).unwrap();
+      setDebitOpen(false);
+      reset();
+      refetch();
+    } catch (e: unknown) {
+      const apiError = (e as { data?: { error?: string }; error?: string })?.data?.error || (e as { error?: string })?.error || 'Failed to debit wallet';
+      setFormError(apiError);
+    }
+  };
+
+  return (
+    <Box>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+        <Typography variant="h5">{getPageTitle()}</Typography>
+        <Box display="flex" gap={2}>
+          <Button variant="contained" onClick={() => setRechargeOpen(true)}>Recharge Wallet</Button>
+          {currentUser?.role === 'admin' && (
+            <Button variant="outlined" color="error" onClick={() => setDebitOpen(true)}>Manual Debit</Button>
+          )}
+        </Box>
+      </Box>
+      {isLoading ? <CircularProgress /> : error ? <Alert severity="error">{(error as unknown as { data?: { error?: string } }).data?.error || 'Failed to load wallets'}</Alert> : (
+        <Box sx={{ width: '100%', overflow: 'auto' }}>
+          <DataGrid
+            rows={wallets.map(wallet => ({
+              ...wallet,
+              userName: wallet.user?.fullName || wallet.user?.email || wallet.user?._id || 'Unknown',
+              userEmail: wallet.user?.email || '',
+              userRole: wallet.user?.role || '',
+            }))}
+            columns={columns}
+            getRowId={(row) => row._id}
+            onRowClick={handleRowClick}
+            autoHeight
+            initialState={{ 
+              pagination: { paginationModel: { pageSize: 10 } },
+              columns: {
+                columnVisibilityModel: {},
+              },
+            }}
+            pageSizeOptions={[10, 25, 50]}
+            sx={{
+              width: '100%',
+              minHeight: 400,
+              '& .MuiDataGrid-cell': {
+                fontSize: '0.875rem',
+              },
+              '& .MuiDataGrid-columnHeader': {
+                fontSize: '0.875rem',
+                fontWeight: 600,
+              },
+              '& .MuiDataGrid-root': {
+                border: '1px solid #e0e0e0',
+              },
+              '& .MuiDataGrid-row:hover': {
+                backgroundColor: 'action.hover',
+                cursor: 'pointer',
+              },
+            }}
+          />
+        </Box>
+      )}
+      {/* Transaction History Modal */}
+      <Dialog 
+        open={transactionModalOpen} 
+        onClose={handleCloseTransactionModal} 
+        maxWidth={false}
+        sx={{
+          '& .MuiDialog-paper': {
+            width: '90vw',
+            maxWidth: '1200px',
+            height: '80vh',
+          },
+        }}
+      >
+        <DialogTitle>
+          Transaction History - {selectedUserId && wallets.find(w => w.user._id === selectedUserId)?.user.fullName}
+        </DialogTitle>
+        <DialogContent>
+          {transactionsLoading ? (
+            <Box display="flex" justifyContent="center" p={3}>
+              <CircularProgress />
+            </Box>
+          ) : userTransactions.length === 0 ? (
+            <Typography variant="body1" color="text.secondary" textAlign="center" p={3}>
+              No transactions found for this user.
+            </Typography>
+          ) : (
+            <Box sx={{ mt: 2, height: 'calc(80vh - 200px)' }}>
+              <DataGrid
+                rows={userTransactions}
+                columns={[
+                  {
+                    field: 'type',
+                    headerName: 'Type',
+                    width: 150,
+                    renderCell: (params) => (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography sx={{ color: getTransactionColor(params.value) }}>
+                          {getTransactionIcon(params.value)}
+                        </Typography>
+                        <Typography sx={{ color: getTransactionColor(params.value), fontWeight: 'medium' }}>
+                          {params.value === 'debit' ? 'Debit' : 'Recharge'}
+                        </Typography>
+                      </Box>
+                    ),
+                  },
+                  {
+                    field: 'amount',
+                    headerName: 'Amount',
+                    width: 150,
+                    renderCell: (params) => (
+                      <Typography sx={{ color: getTransactionColor(params.row.type), fontWeight: 'bold' }}>
+                        ₹{params.value}
+                      </Typography>
+                    ),
+                  },
+                  {
+                    field: 'walletType',
+                    headerName: 'Wallet',
+                    width: 120,
+                    renderCell: (params) => (
+                      <Typography sx={{ textTransform: 'capitalize' }}>
+                        {params.value}
+                      </Typography>
+                    ),
+                  },
+                  {
+                    field: 'initiator',
+                    headerName: 'Initiator',
+                    width: 200,
+                    renderCell: (params) => {
+                      const initiatorId = params.value;
+                      const initiator = users.find(u => u._id === initiatorId);
+                      return (
+                        <Typography>
+                          {initiator ? `${initiator.fullName} (${initiator.role})` : initiatorId}
+                        </Typography>
+                      );
+                    },
+                  },
+                  {
+                    field: 'note',
+                    headerName: 'Note',
+                    flex: 1,
+                    minWidth: 200,
+                    renderCell: (params) => (
+                      <Typography sx={{ fontStyle: params.value ? 'normal' : 'italic', color: params.value ? 'text.primary' : 'text.secondary' }}>
+                        {params.value || 'No note'}
+                      </Typography>
+                    ),
+                  },
+                  {
+                    field: 'createdAt',
+                    headerName: 'Date & Time',
+                    width: 200,
+                    renderCell: (params) => (
+                      <Typography variant="body2">
+                        {new Date(params.value).toLocaleString()}
+                      </Typography>
+                    ),
+                  },
+                ]}
+                getRowId={(row) => row._id}
+                initialState={{
+                  pagination: {
+                    paginationModel: { pageSize: 10 },
+                  },
+                }}
+                pageSizeOptions={[5, 10, 25, 50]}
+                disableRowSelectionOnClick
+                sx={{
+                  '& .MuiDataGrid-cell': {
+                    fontSize: '0.875rem',
+                  },
+                  '& .MuiDataGrid-columnHeader': {
+                    fontSize: '0.875rem',
+                    fontWeight: 600,
+                  },
+                }}
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseTransactionModal}>Close</Button>
+        </DialogActions>
+      </Dialog>
+      {/* Recharge Wallet Dialog */}
+      <Dialog open={rechargeOpen} onClose={() => setRechargeOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Recharge Wallet</DialogTitle>
+        {currentUser?.role === 'agent' && (
+          <DialogContent sx={{ pb: 0 }}>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              Agents can only recharge main wallet of their assigned users. Bonus wallet recharges are admin-only.
+            </Alert>
+          </DialogContent>
+        )}
+        <form onSubmit={handleSubmit(onRecharge)}>
+          <DialogContent>
+            <Controller
+              name="userId"
+              control={control}
+              rules={{ required: true }}
+              render={({ field }) => (
+                <Autocomplete
+                  options={availableUsers}
+                  getOptionLabel={(option) => `${option.fullName} (${option.email})`}
+                  isOptionEqualToValue={(option, value) => option._id === value._id}
+                  onChange={(_, value) => field.onChange(value?._id || '')}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="User"
+                      margin="normal"
+                      error={!!errors.userId}
+                      helperText={errors.userId && 'User is required'}
+                    />
+                  )}
+                />
+              )}
+            />
+            <TextField label="Amount" type="number" fullWidth margin="normal" {...register('amount', { required: true, min: 1 })} error={!!errors.amount} helperText={errors.amount && 'Amount is required'} />
+            <TextField select label="Wallet Type" fullWidth margin="normal" defaultValue="main" {...register('walletType', { required: true })} error={!!errors.walletType} helperText={errors.walletType && 'Wallet type is required'}>
+              {currentUser?.role === 'admin' ? (
+                // Admin can recharge both main and bonus wallets
+                walletTypes.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                ))
+              ) : (
+                // Agents can only recharge main wallet
+                <MenuItem value="main">Main</MenuItem>
+              )}
+            </TextField>
+            <TextField label="Note" fullWidth margin="normal" {...register('note')} />
+            {formError && <Alert severity="error" sx={{ mt: 2 }}>{formError}</Alert>}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setRechargeOpen(false)} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" variant="contained" disabled={isSubmitting}>{isSubmitting ? 'Recharging...' : 'Recharge'}</Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+      {/* Manual Debit Dialog */}
+      <Dialog open={debitOpen} onClose={() => setDebitOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Manual Debit</DialogTitle>
+        <form onSubmit={handleSubmit(onManualDebit)}>
+          <DialogContent>
+            <Controller
+              name="userId"
+              control={control}
+              rules={{ required: true }}
+              render={({ field }) => (
+                <Autocomplete
+                  options={availableUsers}
+                  getOptionLabel={(option) => `${option.fullName} (${option.email})`}
+                  isOptionEqualToValue={(option, value) => option._id === value._id}
+                  onChange={(_, value) => field.onChange(value?._id || '')}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="User"
+                      margin="normal"
+                      error={!!errors.userId}
+                      helperText={errors.userId && 'User is required'}
+                    />
+                  )}
+                />
+              )}
+            />
+            <TextField label="Amount" type="number" fullWidth margin="normal" {...register('amount', { required: true, min: 1 })} error={!!errors.amount} helperText={errors.amount && 'Amount is required'} />
+            <TextField select label="Wallet Type" fullWidth margin="normal" defaultValue="main" {...register('walletType', { required: true })} error={!!errors.walletType} helperText={errors.walletType && 'Wallet type is required'}>
+              {walletTypes.map((option) => (
+                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+              ))}
+            </TextField>
+            <TextField label="Note" fullWidth margin="normal" {...register('note')} />
+            {formError && <Alert severity="error" sx={{ mt: 2 }}>{formError}</Alert>}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setDebitOpen(false)} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" variant="contained" color="error" disabled={isSubmitting}>{isSubmitting ? 'Debiting...' : 'Debit'}</Button>
+          </DialogActions>
+        </form>
+      </Dialog>
+    </Box>
+  );
+} 

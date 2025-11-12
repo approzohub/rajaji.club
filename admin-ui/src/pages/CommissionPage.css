@@ -1,0 +1,87 @@
+/* Commission Page - Remove MuiBox-root background */
+
+/* Remove background from MuiBox-root elements in commission page */
+.commission-page .MuiBox-root {
+  background-color: transparent !important;
+}
+
+/* Specifically target the total percentage box */
+.commission-page .MuiBox-root .MuiTypography-subtitle2 {
+  color: inherit;
+}
+
+/* Ensure chips maintain their styling */
+.commission-page .MuiChip-root {
+  background-color: var(--mui-palette-success-main) !important;
+}
+
+.commission-page .MuiChip-colorSuccess {
+  background-color: var(--mui-palette-success-main) !important;
+}
+
+.commission-page .MuiChip-colorError {
+  background-color: var(--mui-palette-error-main) !important;
+}
+
+/* Chip text color styling */
+.commission-page .MuiChip-colorSuccess .MuiChip-label {
+  color: red !important;
+  font-weight: 600;
+}
+
+.commission-page .MuiChip-colorError .MuiChip-label {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+/* Ensure chip labels are always white for better contrast */
+.commission-page .MuiChip-label {
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+/* Override any inline styles that might be applied */
+.commission-page .MuiBox-root[style*="background"] {
+  background: transparent !important;
+}
+
+/* Target specific elements that might have background colors */
+.commission-page .MuiBox-root[style*="bgcolor"] {
+  background-color: transparent !important;
+}
+
+/* Ensure proper text color for dark theme */
+.commission-page .MuiTypography-root {
+  color: inherit;
+}
+
+/* Error and validation text styling */
+.commission-page .error-text {
+  color: #f44336 !important;
+  font-weight: 500;
+}
+
+.commission-page .validation-error {
+  color: #f44336 !important;
+  font-weight: 500;
+}
+
+.commission-page .MuiTypography-colorError {
+  color: #f44336 !important;
+}
+
+/* Total percentage validation styling */
+.commission-page .total-percentage-error {
+  color: #f44336 !important;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Form field error styling */
+.commission-page .MuiFormHelperText-root.Mui-error {
+  color: #f44336 !important;
+}
+
+.commission-page .MuiInputBase-root.Mui-error .MuiInputBase-input {
+  color: #f44336 !important;
+}

@@ -1,0 +1,23 @@
+# Ignore everything
+
+
+# But not this file
+!.gitignore
+
+**/dist/
+**/logs/
+**.next/
+**/uploads/
+*.env.local
+
+# Ignore environment files
+.env
+*.env
+
+# Ignore node modules folders anywhere
+node_modules/
+**/node_modules/
+
+# Optional: allow specific files or folders if needed
+# !src/
+# !package.json

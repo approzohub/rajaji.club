@@ -1,0 +1,507 @@
+/* App Settings Page - Professional CSS Design */
+
+.app-settings-container {
+  min-height: 100vh;
+  /* background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); */
+  padding: 2rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.app-settings-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.app-settings-header {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  padding: 3rem 2.5rem;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.app-settings-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+  opacity: 0.3;
+}
+
+.app-settings-header-content {
+  position: relative;
+  z-index: 1;
+}
+
+.app-settings-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.app-settings-subtitle {
+  font-size: 1.1rem;
+  color: #cbd5e1;
+  margin: 0;
+  font-weight: 400;
+}
+
+.app-settings-icon {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);
+}
+
+.app-settings-body {
+  padding: 2.5rem;
+}
+
+.settings-section {
+  background: #1e293b;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  border: 1px solid #334155;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.settings-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+  border-color: #475569;
+}
+
+.section-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #334155;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.section-header.whatsapp {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.section-header.contact {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.section-header.config {
+  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+}
+
+.section-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.25rem;
+}
+
+.section-icon.whatsapp {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.section-icon.contact {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.section-icon.config {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: black;
+  margin: 0 0 0.25rem 0;
+}
+
+.section-description {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.section-content {
+  padding: 2rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+}
+
+.form-group {
+  position: relative;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 0.5rem;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #475569;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  background: #334155;
+  color: #f1f5f9;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background: #475569;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.form-input.whatsapp:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.form-input.contact:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-input.config:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.input-prefix {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.input-with-prefix {
+  padding-left: 3rem;
+}
+
+.input-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 1rem;
+}
+
+.input-with-icon {
+  padding-left: 2.75rem;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.checkbox-group {
+  background: #334155;
+  border: 2px solid #475569;
+  border-radius: 12px;
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.checkbox-group:hover {
+  background: #475569;
+  border-color: #64748b;
+}
+
+.checkbox-input {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.checkbox-input:checked {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.checkbox-input.whatsapp:checked {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.checkbox-input.config:checked {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+}
+
+.checkbox-content {
+  flex: 1;
+}
+
+.checkbox-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0 0 0.25rem 0;
+}
+
+.checkbox-description {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.maintenance-warning {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.warning-text {
+  font-size: 0.75rem;
+  color: #92400e;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.save-section {
+  background: #1e293b;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  border: 1px solid #334155;
+}
+
+.save-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.save-info h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 0.5rem 0;
+}
+
+.save-info p {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.save-button {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  padding: 0.875rem 2rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+}
+
+.save-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
+}
+
+.save-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.save-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.alert {
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.alert-error {
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.alert-success {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #bbf7d0;
+  color: #166534;
+}
+
+.loading-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  color: #94a3b8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .app-settings-container {
+    padding: 1rem;
+  }
+  
+  .app-settings-header {
+    padding: 2rem 1.5rem;
+  }
+  
+  .app-settings-title {
+    font-size: 2rem;
+  }
+  
+  .app-settings-body {
+    padding: 1.5rem;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .save-content {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .app-settings-icon {
+    position: static;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .app-settings-content {
+    background: rgba(15, 23, 42, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .settings-section {
+    background: #1e293b;
+    border-color: #334155;
+  }
+  
+  .section-title {
+    color: black;
+  }
+  
+  .section-description {
+    color: #94a3b8;
+  }
+  
+  .form-label {
+    color: #e2e8f0;
+  }
+  
+  .form-input {
+    background: #334155;
+    border-color: #475569;
+    color: #f1f5f9;
+  }
+  
+  .form-input:focus {
+    background: #475569;
+  }
+  
+  .checkbox-group {
+    background: #334155;
+    border-color: #475569;
+  }
+  
+  .checkbox-group:hover {
+    background: #475569;
+  }
+  
+  .checkbox-label {
+    color: #f1f5f9;
+  }
+  
+  .checkbox-description {
+    color: #94a3b8;
+  }
+}
