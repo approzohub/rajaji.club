@@ -112,13 +112,27 @@ export async function changePassword(req: AuthRequest, res: Response) {
   const parse = changePasswordSchema.safeParse(req.body);
   if (!parse.success) return res.status(400).json({ error: 'Invalid input' });
   const { oldPassword, newPassword } = parse.data;
+  
   const user = await User.findById(userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
+  
   const valid = await bcrypt.compare(oldPassword, user.password);
   if (!valid) return res.status(401).json({ error: 'Old password incorrect' });
-  user.password = await bcrypt.hash(newPassword, 10);
-  user.mustChangePassword = false;
-  await user.save();
+  
+  // Hash the new password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  
+  // Update only password fields to avoid triggering full document validation
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    { $set: { password: hashedPassword, mustChangePassword: false } },
+    { new: true, runValidators: false }
+  );
+
+  if (!updatedUser) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
   res.json({ message: 'Password changed' });
 }
 
@@ -129,11 +143,24 @@ export async function updatePassword(req: AuthRequest, res: Response) {
   const parse = updatePasswordSchema.safeParse(req.body);
   if (!parse.success) return res.status(400).json({ error: 'Invalid input' });
   const { newPassword } = parse.data;
+  
   const user = await User.findById(userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  user.password = await bcrypt.hash(newPassword, 10);
-  user.mustChangePassword = false;
-  await user.save();
+  
+  // Hash the new password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  
+  // Update only password fields to avoid triggering full document validation
+  const updatedUser = await User.findByIdAndUpdate(
+    userId,
+    { $set: { password: hashedPassword, mustChangePassword: false } },
+    { new: true, runValidators: false }
+  );
+
+  if (!updatedUser) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
   res.json({ message: 'Password updated' });
 }
 

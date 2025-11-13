@@ -79,13 +79,25 @@ export async function requestWithdrawal(req: AuthRequest, res: Response) {
 
 export async function listWithdrawals(req: AuthRequest, res: Response) {
   const { id: userId, role } = req.user || {};
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+  
   let filter: any = {};
-  if (role === 'user') filter.user = userId;
-  if (role === 'agent') {
-    // List withdrawals for assigned users (optional: implement agent-user mapping)
-    filter = { }; // TODO: filter by agent's users
+  
+  // Users can only see their own withdrawals
+  if (role === 'user') {
+    filter.user = userId;
+  } else if (role === 'agent') {
+    // Agents can see withdrawals for their assigned users (TODO: implement agent-user mapping)
+    // For now, agents see all withdrawals (can be restricted later)
+    filter = {};
+  } else if (role === 'admin') {
+    // Admins see all withdrawals
+    filter = {};
+  } else {
+    // Unknown role - default to user's own withdrawals for security
+    filter.user = userId;
   }
-  // Admin sees all
+  
   const withdrawals = await Withdrawal.find(filter)
     .populate('user', 'fullName gameId email')
     .populate('paymentMethod', 'name upiId')
