@@ -1,0 +1,67 @@
+# Dependencies
+node_modules
+npm-debug.log
+pnpm-lock.yaml
+
+# Build output (will be built in container)
+dist
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Logs
+logs
+*.log
+
+# Test files
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Documentation
+*.md
+!README.md
+
+# Scripts (keep only necessary ones)
+check-*.js
+debug-*.js
+test-*.js
+fix-*.js
+verify-*.js
+create-*.js
+delete-*.js
+inspect-*.js
+monitor-*.js
+predict-*.js
+declare-result.js
+start-with-monitoring.sh
+
+# PM2 configs (not needed in Docker)
+ecosystem*.config.js
+
+# Uploads (will be mounted as volume)
+uploads/images/*
+
+# Misc
+coverage
+.nyc_output
+
+

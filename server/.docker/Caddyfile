@@ -1,0 +1,5 @@
+api.rajaji.club {
+    reverse_proxy server:4000
+}
+
+

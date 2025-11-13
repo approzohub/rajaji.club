@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  server:
+    image: ghcr.io/YOUR_USERNAME/rajaji.club/server:latest
+    container_name: rajaji-server
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    volumes:
+      - ../uploads:/app/uploads
+
+  caddy:
+    image: caddy:latest
+    container_name: rajaji-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+
