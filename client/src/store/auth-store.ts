@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { apiClient } from '../lib/api';
 import { SessionManager } from '../lib/session-manager';
 
@@ -28,22 +27,21 @@ interface AuthState {
   updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   updateBalances: (main: number, bonus: number) => void;
   refreshBalance: () => Promise<void>;
+  getBalance: () => number;
   validateToken: () => Promise<boolean>;
   initializeAuth: () => Promise<void>;
   updateLastActivity: () => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      // Initial state
-      user: null,
-      token: null,
-      isLoggedIn: false,
-      isLoading: true,
-      mainBalance: 0,
-      bonusBalance: 0,
-      lastActivity: Date.now(),
+export const useAuthStore = create<AuthState>()((set, get) => ({
+  // Initial state
+  user: null,
+  token: null,
+  isLoggedIn: false,
+  isLoading: true,
+  mainBalance: 0,
+  bonusBalance: 0,
+  lastActivity: Date.now(),
 
       // Login action
       login: async (identifier: string, password: string) => {
@@ -293,21 +291,10 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Update last activity timestamp
-      updateLastActivity: () => {
-        const now = Date.now();
-        set({ lastActivity: now });
-        SessionManager.updateActivity();
-      },
-    }),
-    {
-      name: 'auth-storage',
-      partialize: (state) => ({ 
-        user: state.user, 
-        token: state.token, 
-        isLoggedIn: state.isLoggedIn,
-        lastActivity: state.lastActivity
-      }),
-    }
-  )
-); 
+  // Update last activity timestamp
+  updateLastActivity: () => {
+    const now = Date.now();
+    set({ lastActivity: now });
+    SessionManager.updateActivity();
+  },
+})); 

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import React from "react";
 import { AuthProvider } from "../components/auth-provider";
+import "../lib/utils"; // Import utils to run localStorage fix
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
