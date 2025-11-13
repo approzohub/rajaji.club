@@ -26,12 +26,11 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Divider,
 } from '@mui/material';
 import {
-  History,
   Edit,
   Casino,
-  TrendingUp,
   ToggleOn,
   ToggleOff,
 } from '@mui/icons-material';
@@ -59,7 +58,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`cards-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ py: 3, px: 0 }}>{children}</Box>}
     </div>
   );
 }
@@ -79,6 +78,8 @@ export default function CardsPage() {
   const [openHistoryDialog, setOpenHistoryDialog] = useState(false);
   const [openAnalyticsDialog, setOpenAnalyticsDialog] = useState(false);
   const [openDisplayOrderDialog, setOpenDisplayOrderDialog] = useState(false);
+  const [openUnifiedActionsDialog, setOpenUnifiedActionsDialog] = useState(false);
+  const [unifiedActionsTab, setUnifiedActionsTab] = useState(0);
   
   // Form states
   const [priceForm, setPriceForm] = useState({
@@ -99,7 +100,10 @@ export default function CardsPage() {
   const { data: allCards = [], isLoading: isLoadingCards, refetch: refetchCards } = useGetCardsQuery();
   const { data: typeCards = [], refetch: refetchTypeCards } = useGetCardsByTypeQuery(selectedCardType, { skip: selectedCardType === 'all' });
   const { data: suitCards = [], refetch: refetchSuitCards } = useGetCardsBySuitQuery(selectedSuit, { skip: selectedSuit === 'all' });
-  const { data: priceHistory = [], isLoading: isLoadingHistory } = useGetCardPriceHistoryQuery(selectedCard?.name || '', { skip: !selectedCard });
+  const { data: priceHistory = [], isLoading: isLoadingHistory } = useGetCardPriceHistoryQuery(
+    selectedCard?.name || '', 
+    { skip: !selectedCard }
+  );
   
   // API mutations
   const [updateCardPrice, { isLoading: isUpdatingPrice }] = useUpdateCardPriceMutation();
@@ -113,31 +117,25 @@ export default function CardsPage() {
     setTabValue(newValue);
   };
 
-  const handleOpenPriceDialog = (card: Card) => {
-    setSelectedCard(card);
-    setPriceForm({
-      newPrice: card.currentPrice,
-      reason: '',
-    });
-    setOpenPriceDialog(true);
-  };
-
-  const handleOpenHistoryDialog = (card: Card) => {
-    setSelectedCard(card);
-    setOpenHistoryDialog(true);
-  };
-
-  const handleOpenAnalyticsDialog = (card: Card) => {
-    setSelectedCard(card);
-    setOpenAnalyticsDialog(true);
-  };
-
   const handleOpenDisplayOrderDialog = (card: Card) => {
     setSelectedCard(card);
     setDisplayOrderForm({
       newOrder: card.displayOrder,
     });
     setOpenDisplayOrderDialog(true);
+  };
+
+  const handleOpenUnifiedActionsDialog = (card: Card) => {
+    setSelectedCard(card);
+    setPriceForm({
+      newPrice: card.currentPrice,
+      reason: '',
+    });
+    setDisplayOrderForm({
+      newOrder: card.displayOrder,
+    });
+    setUnifiedActionsTab(0);
+    setOpenUnifiedActionsDialog(true);
   };
 
   const handleUpdatePrice = async () => {
@@ -391,49 +389,17 @@ export default function CardsPage() {
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 200,
+      width: 120,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) => (
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton
-            size="small"
-            onClick={() => handleOpenPriceDialog(params.row)}
-            title="Edit Price"
-          >
-            <Edit />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => handleOpenHistoryDialog(params.row)}
-            title="Price History"
-          >
-            <History />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => handleOpenAnalyticsDialog(params.row)}
-            title="Analytics"
-          >
-            <TrendingUp />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={() => handleToggleCardStatus(params.row._id)}
-            title={params.row.isActive ? 'Deactivate Card' : 'Activate Card'}
-            disabled={isTogglingStatus}
-            sx={{
-              opacity: isTogglingStatus ? 0.6 : 1,
-              transition: 'opacity 0.2s ease-in-out'
-            }}
-          >
-            {isTogglingStatus ? (
-              <CircularProgress size={20} />
-            ) : (
-              (optimisticUpdates[params.row._id] !== undefined ? optimisticUpdates[params.row._id] : params.row.isActive) 
-                ? <ToggleOn color="success" /> 
-                : <ToggleOff color="error" />
-            )}
-          </IconButton>
-        </Box>
+        <Button
+          variant="outlined"
+          size="small"
+          onClick={() => handleOpenUnifiedActionsDialog(params.row)}
+        >
+          Actions
+        </Button>
       ),
     },
   ];
@@ -909,6 +875,234 @@ export default function CardsPage() {
           >
             {isUpdatingDisplayOrder ? 'Updating...' : 'Update Order'}
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Unified Actions Dialog */}
+      <Dialog open={openUnifiedActionsDialog} onClose={() => setOpenUnifiedActionsDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          Card Actions - {selectedCard?.symbol} {selectedCard?.name.replace(/_/g, ' ').toUpperCase()}
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            <Tabs value={unifiedActionsTab} onChange={(_, newValue) => setUnifiedActionsTab(newValue)}>
+              <Tab label="Edit" />
+              <Tab label="History" />
+              <Tab label="Analytics" />
+              <Tab label="Enable/Disable" />
+            </Tabs>
+          </Box>
+
+          {/* Edit Tab */}
+          {unifiedActionsTab === 0 && selectedCard && (
+            <Box>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="textSecondary">
+                  Current Price: ₹{selectedCard.currentPrice}
+                </Typography>
+              </Box>
+              <TextField
+                fullWidth
+                label="New Price"
+                type="number"
+                value={priceForm.newPrice}
+                onChange={(e) => setPriceForm({ ...priceForm, newPrice: Number(e.target.value) })}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
+                label="Reason (Optional)"
+                value={priceForm.reason}
+                onChange={(e) => setPriceForm({ ...priceForm, reason: e.target.value })}
+                multiline
+                rows={3}
+                sx={{ mb: 2 }}
+              />
+              <Divider sx={{ my: 2 }} />
+              <TextField
+                label="Display Order"
+                type="number"
+                value={displayOrderForm.newOrder}
+                onChange={(e) => setDisplayOrderForm({ newOrder: parseInt(e.target.value) || 0 })}
+                fullWidth
+                helperText="Lower numbers appear first on the game page"
+                inputProps={{ min: 0 }}
+              />
+            </Box>
+          )}
+
+          {/* History Tab */}
+          {unifiedActionsTab === 1 && (
+            <Box>
+              {isLoadingHistory ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <TableContainer component={Paper}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Old Price</TableCell>
+                        <TableCell>New Price</TableCell>
+                        <TableCell>Change</TableCell>
+                        <TableCell>Reason</TableCell>
+                        <TableCell>Changed By</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {priceHistory.map((history) => (
+                        <TableRow key={history._id}>
+                          <TableCell>{new Date(history.effectiveFrom).toLocaleString()}</TableCell>
+                          <TableCell>₹{history.oldPrice}</TableCell>
+                          <TableCell>₹{history.newPrice}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={`${history.newPrice > history.oldPrice ? '+' : ''}${history.newPrice - history.oldPrice}`}
+                              size="small"
+                              color={history.newPrice > history.oldPrice ? 'success' : 'error'}
+                            />
+                          </TableCell>
+                          <TableCell>{history.reason || '-'}</TableCell>
+                          <TableCell>
+                            {typeof history.changedBy === 'string' 
+                              ? history.changedBy 
+                              : (history.changedBy as { fullName?: string; email?: string })?.fullName || (history.changedBy as { fullName?: string; email?: string })?.email || 'Unknown'
+                            }
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Box>
+          )}
+
+          {/* Analytics Tab */}
+          {unifiedActionsTab === 2 && selectedCard && (
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 3 }}>
+              <MuiCard>
+                <CardContent>
+                  <Typography color="textSecondary" gutterBottom>
+                    Total Bids
+                  </Typography>
+                  <Typography variant="h4">
+                    {selectedCard.totalBids}
+                  </Typography>
+                </CardContent>
+              </MuiCard>
+              <MuiCard>
+                <CardContent>
+                  <Typography color="textSecondary" gutterBottom>
+                    Total Amount
+                  </Typography>
+                  <Typography variant="h4">
+                    ₹{selectedCard.totalAmount.toLocaleString()}
+                  </Typography>
+                </CardContent>
+              </MuiCard>
+              <MuiCard>
+                <CardContent>
+                  <Typography color="textSecondary" gutterBottom>
+                    Current Price
+                  </Typography>
+                  <Typography variant="h4">
+                    ₹{selectedCard.currentPrice}
+                  </Typography>
+                </CardContent>
+              </MuiCard>
+              <MuiCard>
+                <CardContent>
+                  <Typography color="textSecondary" gutterBottom>
+                    Status
+                  </Typography>
+                  <Chip
+                    label={selectedCard.isActive ? 'Active' : 'Inactive'}
+                    color={selectedCard.isActive ? 'success' : 'default'}
+                    size="medium"
+                  />
+                </CardContent>
+              </MuiCard>
+            </Box>
+          )}
+
+          {/* Enable/Disable Tab */}
+          {unifiedActionsTab === 3 && selectedCard && (
+            <Box>
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" gutterBottom>
+                  Card Status
+                </Typography>
+                <Chip
+                  label={optimisticUpdates[selectedCard._id] !== undefined 
+                    ? (optimisticUpdates[selectedCard._id] ? 'Active' : 'Inactive')
+                    : (selectedCard.isActive ? 'Active' : 'Inactive')
+                  }
+                  color={optimisticUpdates[selectedCard._id] !== undefined 
+                    ? (optimisticUpdates[selectedCard._id] ? 'success' : 'default')
+                    : (selectedCard.isActive ? 'success' : 'default')
+                  }
+                  size="medium"
+                  sx={{ mb: 2 }}
+                />
+                <Typography variant="body2" color="textSecondary">
+                  {optimisticUpdates[selectedCard._id] !== undefined 
+                    ? (optimisticUpdates[selectedCard._id] ? 'This card is currently active.' : 'This card is currently inactive.')
+                    : (selectedCard.isActive ? 'This card is currently active.' : 'This card is currently inactive.')
+                  }
+                </Typography>
+              </Box>
+              <Button
+                variant="contained"
+                color={optimisticUpdates[selectedCard._id] !== undefined 
+                  ? (optimisticUpdates[selectedCard._id] ? 'error' : 'success')
+                  : (selectedCard.isActive ? 'error' : 'success')
+                }
+                fullWidth
+                onClick={() => {
+                  handleToggleCardStatus(selectedCard._id);
+                }}
+                disabled={isTogglingStatus}
+                startIcon={isTogglingStatus ? <CircularProgress size={20} /> : (optimisticUpdates[selectedCard._id] !== undefined ? optimisticUpdates[selectedCard._id] : selectedCard.isActive) ? <ToggleOff /> : <ToggleOn />}
+              >
+                {isTogglingStatus 
+                  ? 'Updating...' 
+                  : (optimisticUpdates[selectedCard._id] !== undefined ? optimisticUpdates[selectedCard._id] : selectedCard.isActive) 
+                    ? 'Deactivate Card' 
+                    : 'Activate Card'
+                }
+              </Button>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenUnifiedActionsDialog(false)}>Close</Button>
+          {unifiedActionsTab === 0 && (
+            <>
+              <Button 
+                onClick={async () => {
+                  await handleUpdatePrice();
+                  setOpenUnifiedActionsDialog(false);
+                }} 
+                variant="contained"
+                disabled={isUpdatingPrice}
+              >
+                {isUpdatingPrice ? 'Updating...' : 'Update Price'}
+              </Button>
+              <Button 
+                onClick={async () => {
+                  await handleUpdateDisplayOrder();
+                  setOpenUnifiedActionsDialog(false);
+                }} 
+                variant="outlined"
+                disabled={isUpdatingDisplayOrder}
+              >
+                {isUpdatingDisplayOrder ? 'Updating...' : 'Update Order'}
+              </Button>
+            </>
+          )}
         </DialogActions>
       </Dialog>
     </Box>
