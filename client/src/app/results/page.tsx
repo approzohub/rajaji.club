@@ -329,13 +329,12 @@ export default function ResultsPage() {
 
 
           {/* Title and Filter Section - Full Width */}
-          <div className="mb-6 flex justify-between items-center">
+          <div className="mb-4 sm:mb-6 flex justify-between items-center flex-wrap gap-2">
             <h1
-              className="text-white font-bold text-2xl"
+              className="text-white font-bold text-xl sm:text-2xl"
               style={{
                 fontFamily: 'Poppins, sans-serif',
                 fontWeight: 700,
-                fontSize: '20px',
                 lineHeight: '20px',
                 fontStyle: "inherit",
               }}
@@ -359,36 +358,35 @@ export default function ResultsPage() {
 
 
           {/* Date Range Picker - Full Width */}
-          <div className="mb-4 flex gap-2 items-center">
+          <div className="mb-4 flex flex-wrap gap-2 items-center">
             <button
               onClick={() => setShowDatePicker(true)}
-              className="bg-[#222B44] hover:bg-[#2a3448] text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
+              className="bg-[#222B44] hover:bg-[#2a3448] text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-colors cursor-pointer text-xs sm:text-sm whitespace-nowrap"
               style={{
                 fontFamily: 'Poppins, sans-serif',
                 fontWeight: 500,
-                fontSize: '14px',
                 lineHeight: '20px',
               }}
             >
-              📅 {currentDateRange ? 'Change Date Range' : 'Select Date Range'}
+              📅 <span className="hidden sm:inline">{currentDateRange ? 'Change Date Range' : 'Select Date Range'}</span>
+              <span className="sm:hidden">Date</span>
             </button>
             
             {currentDateRange && (
               <>
                 <button
                   onClick={handleResetFilter}
-                  className="bg-[#222B44] hover:bg-[#2a3448] text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
+                  className="bg-[#222B44] hover:bg-[#2a3448] text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-colors cursor-pointer text-xs sm:text-sm whitespace-nowrap"
                   style={{
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 500,
-                    fontSize: '14px',
                     lineHeight: '20px',
                   }}
                 >
                   🔄 Reset
                 </button>
                 
-                <span className="text-white text-sm px-3 py-2 bg-[#222B44] rounded-lg">
+                <span className="text-white text-xs sm:text-sm px-2 sm:px-3 py-2 bg-[#222B44] rounded-lg whitespace-nowrap">
                   {formatDateForDisplay(currentDateRange.start)} to {formatDateForDisplay(currentDateRange.end)}
                 </span>
               </>
@@ -401,11 +399,11 @@ export default function ResultsPage() {
           />
 
           {/* Chart Table and Result Panel - Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
 
             {/* Left Column - Result Chart Table (3/4 width) */}
-            <div className="lg:col-span-3">
-              <div className="w-full bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200">
+            <div className="lg:col-span-3 w-full">
+              <div className="w-full bg-white rounded-lg sm:rounded-xl shadow-2xl overflow-hidden border border-gray-200">
                 {isLoading ? (
                   <div className="h-96 flex items-center justify-center">
                     <div className="text-gray-600 text-lg font-medium">Loading results...</div>
@@ -447,16 +445,16 @@ export default function ResultsPage() {
                   </div>
                 ) : (
                   <div ref={scrollableContainerRef} className="h-96 md:h-[32rem] xl:h-[40rem] overflow-auto">
-                    <table className="min-w-full text-sm table">
+                    <table className="min-w-full text-xs sm:text-sm table">
                       <thead className="sticky top-0 bg-[#222B44] z-10">
                         <tr>
-                          <th className="px-6 py-4 font-semibold text-white text-left border-r border-white border-b border-white sticky left-0 bg-[#222B44] text-white z-9">
+                          <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 font-semibold text-white text-left border-r border-white border-b border-white sticky left-0 bg-[#222B44] text-white z-9">
                             <span style={{
                               fontFamily: 'Poppins, sans-serif',
                               fontWeight: 600,
-                              fontSize: '14px',
+                              fontSize: '12px',
                               lineHeight: '1.5',
-                            }}>
+                            }} className="sm:text-sm">
                               Time
                             </span>
                           </th>
@@ -473,14 +471,15 @@ export default function ResultsPage() {
                             const isToday = date === todayFormatted;
                             
                             return (
-                              <th key={index} className="px-6 py-4 font-semibold text-white text-center border-r border-white border-b border-white">
+                              <th key={index} className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 font-semibold text-white text-center border-r border-white border-b border-white">
                                 <span style={{
                                   fontFamily: 'Poppins, sans-serif',
                                   fontWeight: 600,
-                                  fontSize: '14px',
+                                  fontSize: '12px',
                                   lineHeight: '1.5',
-                                }}>
-                                  {isToday ? "Today's Results" : date}
+                                  whiteSpace: 'nowrap',
+                                }} className="sm:text-sm">
+                                  {isToday ? "Today" : date}
                                 </span>
                               </th>
                             );
@@ -490,13 +489,13 @@ export default function ResultsPage() {
                       <tbody>
                         {chartData.map((row, rowIndex) => (
                           <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-[#f8f9fa]" : "bg-white"}>
-                            <td className="px-6 py-4 font-medium text-white whitespace-nowrap border-r border-white border-b border-white bg-[#222B44] sticky left-0">
+                            <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 font-medium text-white whitespace-nowrap border-r border-white border-b border-white bg-[#222B44] sticky left-0">
                               <span style={{
                                 fontFamily: 'Poppins, sans-serif',
                                 fontWeight: 500,
-                                fontSize: '14px',
+                                fontSize: '12px',
                                 lineHeight: '1.5',
-                              }}>
+                              }} className="sm:text-sm">
                                 {row.time}
                               </span>
                             </td>
@@ -504,14 +503,14 @@ export default function ResultsPage() {
                             {row.results.map((result, resultIndex) => {
                               if (!result || result === 'N/A') {
                                 return (
-                                  <td key={resultIndex} className="px-6 py-4 text-center border-r border-white border-b border-white">
+                                  <td key={resultIndex} className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-center border-r border-white border-b border-white">
                                     <span style={{
                                       fontFamily: 'Poppins, sans-serif',
                                       fontWeight: 500,
-                                      fontSize: '14px',
+                                      fontSize: '12px',
                                       lineHeight: '1.5',
                                       color: '#6c757d'
-                                    }}>
+                                    }} className="sm:text-sm">
                                       N/A
                                     </span>
                                   </td>
@@ -520,14 +519,14 @@ export default function ResultsPage() {
 
                               if (!result || typeof result !== 'string') {
                                 return (
-                                  <td key={resultIndex} className="px-6 py-4 text-center border-r border-white border-b border-white">
+                                  <td key={resultIndex} className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-center border-r border-white border-b border-white">
                                     <span style={{
                                       fontFamily: 'Poppins, sans-serif',
                                       fontWeight: 500,
-                                      fontSize: '14px',
+                                      fontSize: '12px',
                                       lineHeight: '1.5',
                                       color: '#6c757d'
-                                    }}>
+                                    }} className="sm:text-sm">
                                       N/A
                                     </span>
                                   </td>
@@ -540,32 +539,32 @@ export default function ResultsPage() {
                                 const cardSuit = resultParts[1];
 
                                 return (
-                                  <td key={resultIndex} className="px-6 py-4 text-center border-r border-white border-b border-white">
-                                    <div className="flex items-center justify-center gap-1">
+                                  <td key={resultIndex} className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-center border-r border-white border-b border-white">
+                                    <div className="flex items-center justify-center gap-0.5 sm:gap-1">
                                       <span style={{
                                         fontFamily: 'Poppins, serif',
                                         fontWeight: 500,
-                                        fontSize: '14px',
+                                        fontSize: '12px',
                                         lineHeight: '1.5',
                                         color: '#000000'
-                                      }}>
+                                      }} className="sm:text-sm">
                                         {cardRank}
                                       </span>
-                                      <SuitIcon suit={cardSuit} size={22} />
+                                      <SuitIcon suit={cardSuit} size={18} />
                                     </div>
                                   </td>
                                 );
                               }
 
                               return (
-                                <td key={resultIndex} className="px-6 py-4 text-center border-r border-white border-b border-white">
+                                <td key={resultIndex} className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-center border-r border-white border-b border-white">
                                   <span style={{
                                     fontFamily: 'Poppins, serif',
                                     fontWeight: 500,
-                                    fontSize: '14px',
+                                    fontSize: '12px',
                                     lineHeight: '1.5',
                                     color: '#6c757d'
-                                  }}>
+                                  }} className="sm:text-sm">
                                     {result}
                                   </span>
                                 </td>
