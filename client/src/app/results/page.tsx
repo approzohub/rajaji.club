@@ -279,17 +279,20 @@ export default function ResultsPage() {
   };
 
   const handleResetFilter = () => {
-    setCurrentDateRange(null);
-    // Reset to current month
-    // const now = new Date();
-    // const currentYear = now.getFullYear();
-    // const currentMonth = now.getMonth() + 1;
+    // Reset to current month (1st to current date)
+    const now = new Date();
     
-    // const startDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-    // const lastDay = new Date(currentYear, currentMonth, 0).getDate();
-    // const endDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${lastDay}`;
+    // Convert to IST timezone for proper date calculation
+    const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
     
-    fetchResultsByDateRange();
+    // Format dates as YYYY-MM-DD for API call using IST dates
+    const startDate = `${istNow.getFullYear()}-${String(istNow.getMonth() + 1).padStart(2, '0')}-01`; // 1st of current month
+    const endDate = `${istNow.getFullYear()}-${String(istNow.getMonth() + 1).padStart(2, '0')}-${String(istNow.getDate()).padStart(2, '0')}`; // Current date
+    
+    console.log('Resetting to current month:', { startDate, endDate });
+    
+    setCurrentDateRange({ start: startDate, end: endDate });
+    // fetchResultsByDateRange will be called automatically via useEffect when currentDateRange changes
   };
 
   async function handleLoginSubmit(gameId: string, password: string) {
@@ -406,6 +409,41 @@ export default function ResultsPage() {
                 {isLoading ? (
                   <div className="h-96 flex items-center justify-center">
                     <div className="text-gray-600 text-lg font-medium">Loading results...</div>
+                  </div>
+                ) : chartData.length === 0 || dateColumns.length === 0 ? (
+                  <div className="h-96 md:h-[32rem] xl:h-[40rem] flex flex-col items-center justify-center p-8">
+                    <div className="text-center">
+                      <div className="text-6xl mb-4">📅</div>
+                      <h3 className="text-xl font-semibold text-gray-800 mb-2" style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 600,
+                      }}>
+                        No Results Found
+                      </h3>
+                      <p className="text-gray-600 mb-4" style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 400,
+                        fontSize: '14px',
+                      }}>
+                        {currentDateRange ? (
+                          <>
+                            No game results available for the selected date range
+                            <br />
+                            <span className="text-gray-500 text-sm mt-2 block">
+                              {formatDateForDisplay(currentDateRange.start)} to {formatDateForDisplay(currentDateRange.end)}
+                            </span>
+                          </>
+                        ) : (
+                          'No game results available for the selected period'
+                        )}
+                      </p>
+                      <p className="text-gray-500 text-sm" style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 400,
+                      }}>
+                        Please try selecting a different date range
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   <div ref={scrollableContainerRef} className="h-96 md:h-[32rem] xl:h-[40rem] overflow-auto">
@@ -554,45 +592,50 @@ export default function ResultsPage() {
       <Footer />
       <WhatsAppFab />
 
-      {/* Sticky Play Now Button for Mobile - Only show when logged in */}
-      {isLoggedIn && (
-        <div 
-          className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-[#0a0f1a] flex justify-center pointer-events-auto"
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 9999,
-            pointerEvents: 'auto',
-            WebkitTransform: 'translateZ(0)',
-            transform: 'translateZ(0)',
-          }}
-        >
-        <a
-          href={gameStatus === 'open' ? "/game" : "#"}
+      {/* Sticky Play Now/Timeout Button for Mobile - Always show */}
+      <div 
+        className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-[#0a0f1a] flex justify-center pointer-events-auto"
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+          pointerEvents: 'auto',
+          WebkitTransform: 'translateZ(0)',
+          transform: 'translateZ(0)',
+          minHeight: '60px',
+        }}
+      >
+        <button
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             if (gameStatus === 'open') {
-              console.log('Play now link clicked');
-              window.location.href = '/game';
+              if (isLoggedIn) {
+                console.log('Play now button clicked');
+                window.location.href = '/game';
+              } else {
+                setLoginOpen(true);
+              }
             }
           }}
           onTouchStart={(e) => {
             e.preventDefault();
-            console.log('Play now link touch start');
           }}
           onTouchEnd={(e) => {
             e.preventDefault();
-            console.log('Play now link touch end');
             if (gameStatus === 'open') {
-              window.location.href = '/game';
+              if (isLoggedIn) {
+                window.location.href = '/game';
+              } else {
+                setLoginOpen(true);
+              }
             }
           }}
           className={`w-full max-w-md py-4 shadow transition-colors pointer-events-auto touch-manipulation block text-center ${
-            gameStatus === 'open' 
-              ? 'bg-[#FFCD01] text-black cursor-pointer' 
+            gameStatus === 'open' || !isLoggedIn
+              ? 'bg-[#FFCD01] text-black cursor-pointer hover:bg-yellow-400' 
               : 'bg-[#FFCD01] text-black cursor-not-allowed'
           }`}
           style={{
@@ -610,14 +653,14 @@ export default function ResultsPage() {
             WebkitUserSelect: 'none',
             userSelect: 'none',
             touchAction: 'manipulation',
-            textDecoration: 'none',
-            display: 'block',
+            border: 'none',
+            outline: 'none',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
           }}
         >
-          {gameStatus === 'open' ? 'PLAY NOW' : 'TIME OUT'}
-        </a>
-        </div>
-      )}
+          {!isLoggedIn ? 'PLAY NOW' : (gameStatus === 'open' ? 'PLAY NOW' : 'TIME OUT')}
+        </button>
+      </div>
       <LoginModal 
         open={loginOpen} 
         onClose={() => { setLoginOpen(false); setLoginError(""); }} 

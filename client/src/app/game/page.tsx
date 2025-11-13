@@ -4,7 +4,7 @@ import { Footer } from "../components/footer";
 import { ResultPanel } from "../components/result-panel";
 import { DeckCard } from "../components/deck-card";
 import { GameRules } from "../components/game-rules";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { IoMdTrash } from "react-icons/io";
 import { WhatsAppFab } from "../components/whatsapp-fab";
 import { SuitIcon } from "../components/SuitIcon";
@@ -275,26 +275,48 @@ export default function GamePage() {
     });
   }
 
-  // Prepare cart display using active cards data
-  const cartItems = Object.entries(cart).map(([key, count]) => {
-    // Find the card data from activeCards array
-    const card = activeCards.find(c => `${c.card}${c.symbol}` === key);
-    if (!card) {
-      // Fallback if card not found
-      const value = key.slice(0, key.length - 1);
-      const suit = key.slice(-1);
-      const price = apiCardPrices[key] || 0;
-      return { value, suit, count, price };
-    }
-    
-    return { 
-      value: card.card, 
-      suit: card.symbol, 
-      count, 
-      price: card.currentPrice 
-    };
-  });
-  const total = cartItems.reduce((sum, item) => sum + item.price * item.count, 0);
+  // Prepare cart display using active cards data - useMemo to ensure reactivity
+  const cartItems = useMemo(() => {
+    return Object.entries(cart).map(([key, count]) => {
+      // Find the card data from activeCards array
+      const card = activeCards.find(c => `${c.card}${c.symbol}` === key);
+      if (!card) {
+        // Fallback if card not found
+        const value = key.slice(0, key.length - 1);
+        const suit = key.slice(-1);
+        const price = apiCardPrices[key] || 0;
+        return { value, suit, count, price };
+      }
+      
+      return { 
+        value: card.card, 
+        suit: card.symbol, 
+        count, 
+        price: card.currentPrice || 0
+      };
+    }).filter(item => item.price > 0); // Filter out items with invalid prices
+  }, [cart, activeCards, apiCardPrices]);
+  
+  const total = useMemo(() => {
+    return cartItems.reduce((sum, item) => sum + item.price * item.count, 0);
+  }, [cartItems]);
+  
+  // Format number in Indian Rupees format (e.g., 100000 -> 1,00,000)
+  const formatIndianRupees = (amount: number): string => {
+    return amount.toLocaleString('en-IN');
+  };
+
+  // Calculate winning amount based on lowest total bid amount (price × count) per card type
+  const minTotalAmount = useMemo(() => {
+    if (cartItems.length === 0) return 0;
+    const totalAmounts = cartItems.map(item => item.price * item.count).filter(amount => amount > 0);
+    if (totalAmounts.length === 0) return 0;
+    return Math.min(...totalAmounts);
+  }, [cartItems]);
+  
+  const winningAmount = useMemo(() => {
+    return minTotalAmount > 0 ? minTotalAmount * 10 : 0;
+  }, [minTotalAmount]);
 
   function handlePayNow() {
     // Prevent banned users from attempting to play
@@ -490,10 +512,23 @@ export default function GamePage() {
     <ProtectedRoute>
       <div className="flex flex-col min-h-screen bg-[#0a0f1a] text-white">
         <Header balance={balance} />
+      {/* Result and Timer Container - 2 Column Layout for Mobile Only - Outside main container for full width */}
+      <div className="md:hidden grid grid-cols-2  w-full">
+        {/* Left Column - Result Container */}
+        <div>
+          <ResultPanel isRmPlayNow={true} showOnlyResult={true} />
+        </div>
+        {/* Right Column - Game Timer */}
+        <div>
+          <ResultPanel isRmPlayNow={true} showOnlyTimer={true} />
+        </div>
+      </div>
+
       <main className="flex flex-col items-center flex-1 w-full px-5 sm:px-0 pt-6">
         <h2 className="text-[20px] font-medium leading-[24px] tracking-[0px] mb-4 md:block hidden font-poppins">
           Play Game
         </h2>
+        
         <div className="flex flex-col md:flex-row w-full max-w-7xl md:gap-6 md:mt-0">
           <div className="flex-1 flex flex-col items-center gap-4 md:order-1">
             {/* Desktop: grid, Mobile: horizontal scroll */}
@@ -578,6 +613,7 @@ export default function GamePage() {
             </div>
           </div>
           <div className="flex flex-col gap-4 w-full md:w-[340px] md:order-2">
+            {/* Desktop/tablet version - Result Panel */}
             <div className="hidden md:block">
               <ResultPanel isRmPlayNow={true} />
             </div>
@@ -681,6 +717,23 @@ export default function GamePage() {
                   <span>TOTAL</span>
                   <span>₹{total}</span>
                 </div>
+                {cartItems.length > 0 && winningAmount > 0 && (
+                  <div className="mt-3 text-center">
+                    <span
+                      style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 600,
+                        fontStyle: 'normal',
+                        fontSize: '16px',
+                        lineHeight: '20px',
+                        letterSpacing: '0%',
+                        color: '#000000',
+                      }}
+                    >
+                      Winning amount can be up to ₹{formatIndianRupees(winningAmount)}
+                    </span>
+                  </div>
+                )}
                 <button
                   className="mt-4 w-full bg-[#FFCD01] text-black font-bold py-3 rounded-lg text-lg shadow transition-colors disabled:opacity-50 cursor-pointer"
                   onClick={handlePayNow}
@@ -690,9 +743,8 @@ export default function GamePage() {
                 </button>
               </div>
             </div>
-            {/* Mobile version */}
+            {/* Mobile version - Cart section only, Result/Timer shown at top */}
             <div className="md:hidden w-full max-w-md mx-auto flex flex-col gap-3 mt-2">
-              <ResultPanel isRmPlayNow={true} />
               <h4 className="text-2xl font-bold mt-4 mb-[-10px] line-height-[25px] text-left">Play Game</h4>
               <div className="w-full overflow-x-auto pb-5">
                 {isLoadingCards ? (
@@ -845,6 +897,23 @@ export default function GamePage() {
                 >
                   PLAY NOW
                 </button>
+                {cartItems.length > 0 && winningAmount > 0 && (
+                  <div className="mt-2 text-center pb-2">
+                    <span
+                      style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 600,
+                        fontStyle: 'normal',
+                        fontSize: '16px',
+                        lineHeight: '20px',
+                        letterSpacing: '0%',
+                        color: '#000000',
+                      }}
+                    >
+                      Winning amount can be up to ₹{formatIndianRupees(winningAmount)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>  
           </div>
