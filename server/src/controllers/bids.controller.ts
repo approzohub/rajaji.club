@@ -30,7 +30,9 @@ const simpleBidSchema = z.object({
 
 export async function placeBid(req: AuthRequest, res: Response) {
   const { id: userId, role } = req.user || {};
-  if (!userId || role !== 'user') return res.status(403).json({ error: 'Forbidden' });
+  if (!userId || (role !== 'user' && role !== 'agent')) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
   
   const parse = placeBidSchema.safeParse(req.body);
   if (!parse.success) return res.status(400).json({ error: 'Invalid input' });

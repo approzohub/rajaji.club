@@ -292,4 +292,4 @@ export function isWithinThirtyMinuteSlot(slotStartTime: Date, date: Date = new D
   const slotEnd = slotStart.clone().add(SLOT_INTERVAL_MINUTES, 'minutes');
   
   return istDate.isBetween(slotStart, slotEnd, null, '[)');
-}
+} 

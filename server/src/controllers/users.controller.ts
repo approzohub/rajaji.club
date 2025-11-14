@@ -23,6 +23,7 @@ export async function createUser(req: AuthRequest, res: Response) {
   const parse = createUserSchema.safeParse(req.body);
   if (!parse.success) return res.status(400).json({ error: 'Invalid input', details: parse.error.issues });
   const { fullName, email, phone, password, assignedAgent, role } = parse.data;
+  const normalizedEmail = email && email.trim() !== '' ? email.trim().toLowerCase() : undefined;
   
   // Agents can only create users, not other agents
   if (req.user.role === 'agent' && role !== 'user') {
@@ -31,8 +32,8 @@ export async function createUser(req: AuthRequest, res: Response) {
   
   // Check if user already exists (only check email if provided)
   const existsQuery: any = { phone };
-  if (email) {
-    existsQuery.$or = [{ email: email.toLowerCase() }, { phone }];
+  if (normalizedEmail) {
+    existsQuery.$or = [{ email: normalizedEmail }, { phone }];
   }
   const exists = await User.findOne(existsQuery);
   if (exists) return res.status(409).json({ error: 'Email or phone already exists' });
@@ -51,7 +52,7 @@ export async function createUser(req: AuthRequest, res: Response) {
   
   const user = new User({
     fullName,
-    email: email ? email.toLowerCase() : undefined,
+    email: normalizedEmail,
     phone,
     gameId,
     password: hashed,
@@ -130,11 +131,10 @@ export async function updateUser(req: AuthRequest, res: Response) {
   
   console.log('Update user request:', { userId: id, updateData: update });
   
-  // Handle email update - convert empty string to undefined
-  if (update.email === '') {
-    update.email = undefined;
-  } else if (update.email) {
-    update.email = update.email.toLowerCase();
+  // Handle email update - convert empty/whitespace to undefined
+  if (typeof update.email === 'string') {
+    const trimmedEmail = update.email.trim();
+    update.email = trimmedEmail ? trimmedEmail.toLowerCase() : undefined;
   }
   
   // If phone is being updated, check for duplicates and regenerate gameId

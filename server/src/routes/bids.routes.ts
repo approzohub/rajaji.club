@@ -139,8 +139,8 @@ const router = Router();
  *       401:
  *         description: Unauthorized
  */
-router.post('/', jwtAuth, requireRole('user'), placeBid);
-router.post('/simple', jwtAuth, requireRole('user'), placeSimpleBid);
+router.post('/', jwtAuth, requireRole('user', 'agent'), placeBid);
+router.post('/simple', jwtAuth, requireRole('user', 'agent'), placeSimpleBid);
 
 /**
  * @swagger

@@ -44,10 +44,9 @@ const userSchema = new Schema<IUser>(
     email: { 
       type: String, 
       required: false, 
-      unique: true,
-      sparse: true,
       lowercase: true,
-      trim: true
+      trim: true,
+      default: undefined,
     },
     phone: { 
       type: String, 
@@ -72,6 +71,15 @@ const userSchema = new Schema<IUser>(
     mustChangePassword: { type: Boolean, default: true },
   },
   { timestamps: true }
+);
+
+userSchema.index(
+  { email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { email: { $exists: true, $ne: null } },
+    name: 'unique_email_if_present',
+  }
 );
 
 // Pre-save middleware to generate gameId if not provided
