@@ -185,7 +185,7 @@ export async function listWalletTransactions(req: AuthRequest, res: Response) {
     }
   }
   
-  const txns = await WalletTransaction.find(filter).populate('user', 'fullName email gameId').sort({ createdAt: -1 }).limit(100);
+  const txns = await WalletTransaction.find(filter).populate('user', 'fullName email phone gameId').sort({ createdAt: -1 }).limit(100);
   res.json(txns);
 }
 
@@ -196,12 +196,12 @@ export async function listWallets(req: AuthRequest, res: Response) {
   let wallets;
   if (role === 'admin') {
     // Admin can see all wallets
-    wallets = await Wallet.find().populate('user', 'fullName email gameId role').sort({ updatedAt: -1 });
+    wallets = await Wallet.find().populate('user', 'fullName email phone gameId role').sort({ updatedAt: -1 });
   } else {
     // Agent can only see wallets of their assigned users
     const assignedUsers = await User.find({ assignedAgent: userId }).select('_id');
     const assignedUserIds = assignedUsers.map(u => u._id);
-    wallets = await Wallet.find({ user: { $in: assignedUserIds } }).populate('user', 'fullName email gameId role').sort({ updatedAt: -1 });
+    wallets = await Wallet.find({ user: { $in: assignedUserIds } }).populate('user', 'fullName email phone gameId role').sort({ updatedAt: -1 });
   }
   
   res.json(wallets);
@@ -256,7 +256,7 @@ export async function getMyWallet(req: AuthRequest, res: Response) {
     }
     
     // Populate user information
-    await wallet.populate('user', 'fullName email gameId role');
+    await wallet.populate('user', 'fullName email phone gameId role');
     
     res.json(wallet);
   } catch (error) {

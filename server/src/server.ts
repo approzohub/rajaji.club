@@ -22,9 +22,9 @@ import {
   getAllTimeSlotsForDate
 } from "./utils/timezone";
 // Timer configuration from environment variables
-const BIDDING_DURATION = parseInt(process.env.BIDDING_DURATION || '25');
-const BREAK_DURATION = parseInt(process.env.BREAK_DURATION || '5');
-const GAME_CREATION_INTERVAL = parseInt(process.env.GAME_CREATION_INTERVAL || '30');
+const BIDDING_DURATION = parseInt(process.env.BIDDING_DURATION || '9');
+const BREAK_DURATION = parseInt(process.env.BREAK_DURATION || '1');
+const GAME_CREATION_INTERVAL = parseInt(process.env.GAME_CREATION_INTERVAL || '10');
 
 // Helper function to get total game duration
 function getTotalGameDuration(): number {
@@ -144,7 +144,7 @@ function startTimer() {
     } else {
       // No active game - calculate proper game phases using IST functions
       const nextSlot = getNextThirtyMinuteSlot(now);
-      const gameStartTime = addMinutesIST(nextSlot, -30); // 30 minutes before next slot
+      const gameStartTime = addMinutesIST(nextSlot, -GAME_CREATION_INTERVAL); // One full slot before next slot
       const biddingEndTime = addMinutesIST(gameStartTime, BIDDING_DURATION);
       
       if (now < gameStartTime) {
@@ -198,7 +198,7 @@ function startTimer() {
         gameStatus = 'open';
         currentTimer = BIDDING_DURATION * 60;
         
-        // Set result time for next game (should be at HH:00 or HH:30)
+        // Set result time for next game (aligned with slot interval)
         const nextGameEndTime = addMinutesIST(now, getTotalGameDuration());
         resultTime = nextGameEndTime.toLocaleTimeString('en-US', {
           hour: '2-digit',
@@ -302,7 +302,7 @@ async function updateActiveGame() {
       // No active game found - calculate proper game phases
       activeGameId = null;
       
-      // Calculate current 30-minute slot and game phases using IST functions
+      // Calculate current slot and game phases using IST functions
       const currentSlot = getCurrentThirtyMinuteSlot(now);
       const gameStartTime = currentSlot;
       const biddingEndTime = addMinutesIST(gameStartTime, BIDDING_DURATION);

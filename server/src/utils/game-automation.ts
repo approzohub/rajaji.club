@@ -358,9 +358,11 @@ async function getLastRandomResult(excludeGameId?: Types.ObjectId | string) {
     .exec();
 }
 // Timer configuration from environment variables
-const BIDDING_DURATION = parseInt(process.env.BIDDING_DURATION || '25');
-const BREAK_DURATION = parseInt(process.env.BREAK_DURATION || '5');
-const GAME_CREATION_INTERVAL = parseInt(process.env.GAME_CREATION_INTERVAL || '30');
+const BIDDING_DURATION = parseInt(process.env.BIDDING_DURATION || '9');
+const BREAK_DURATION = parseInt(process.env.BREAK_DURATION || '1');
+const GAME_CREATION_INTERVAL = parseInt(process.env.GAME_CREATION_INTERVAL || '10');
+const MINUTES_PER_DAY = 24 * 60;
+const SLOTS_PER_DAY = Math.ceil(MINUTES_PER_DAY / GAME_CREATION_INTERVAL);
 
 // Helper functions
 function getBiddingDuration(): number {
@@ -410,12 +412,15 @@ async function checkAndCreateMissingGames() {
       createdAt: { $gte: startOfToday }
     }).sort({ timeWindow: 1 });
     
-    // Calculate expected time slots for today (48 slots - 24 hours * 2 slots per hour)
+    // Calculate expected time slots for today based on configured interval
     const expectedSlots: string[] = [];
     const startTime = startOfToday;
+
+    const minutesInDay = 24 * 60;
+    const slotsPerDay = Math.ceil(minutesInDay / GAME_CREATION_INTERVAL);
     
-    for (let i = 0; i < 48; i++) { // 24 hours = 48 slots
-      const slotTime = addMinutesIST(startTime, i * 30);
+    for (let i = 0; i < slotsPerDay; i++) {
+      const slotTime = addMinutesIST(startTime, i * GAME_CREATION_INTERVAL);
       expectedSlots.push(slotTime.toISOString());
     }
     
@@ -493,7 +498,7 @@ async function checkAndCreateMissingResults() {
     // Calculate expected result times for today up to current time (past slots only)
     const expectedResultTimes: Date[] = [];
     
-    // Get all 48 time slots for today
+    // Get all time slots for today based on configured interval
     const allTimeSlots = getAllTimeSlotsForDate(now);
     
     // Filter to only include slots that have passed (up to current time)
@@ -503,8 +508,8 @@ async function checkAndCreateMissingResults() {
     
     for (const slot of allTimeSlots) {
       if (slot <= now && slot < currentSlot) {
-        // Add 30 minutes to get the result time (game end time)
-        const resultTime = addMinutesIST(slot, 30);
+        // Add total game duration to get the result time (game end time)
+        const resultTime = addMinutesIST(slot, getTotalGameDuration());
         expectedResultTimes.push(resultTime);
       }
     }
@@ -590,9 +595,9 @@ async function createRandomResultForTime(resultTime: Date) {
     const winningCardType = selectedCard.type;
     const winningCardSuit = selectedCard.suit;
     
-    // Calculate the game start time (30 minutes before result time)
+    // Calculate the game start time (one slot interval before result time)
     // Use consistent time slot calculation
-    const gameStartTime = addMinutesIST(resultTime, -30);
+    const gameStartTime = addMinutesIST(resultTime, -GAME_CREATION_INTERVAL);
     
     // Get slot index for logging
     const slotIndex = getTimeSlotIndex(gameStartTime);
@@ -602,7 +607,7 @@ async function createRandomResultForTime(resultTime: Date) {
       hour12: true
     });
     
-    console.log(`🎯 Creating result for slot ${slotIndex}/47 (${slotTimeString})`);
+    console.log(`🎯 Creating result for slot ${slotIndex}/${SLOTS_PER_DAY - 1} (${slotTimeString})`);
     
     // Check if a game already exists for this time window
     let existingGame = await Game.findOne({ 
@@ -749,7 +754,7 @@ async function createGameIfNotExists() {
     }
     
     // Calculate the proper start time for the current time window
-    // Use the current 30-minute slot start time (consistent across all dates)
+    // Use the current slot start time (consistent across all dates)
     const currentSlotStart = getCurrentThirtyMinuteSlot(now);
     const startTime = currentSlotStart;
     const biddingEndTime = addMinutesIST(startTime, getBiddingDuration());
@@ -763,7 +768,7 @@ async function createGameIfNotExists() {
       hour12: true
     });
     
-    console.log(`📅 Game timing calculation (Slot ${slotIndex}/47):`);
+    console.log(`📅 Game timing calculation (Slot ${slotIndex}/${SLOTS_PER_DAY - 1}):`);
     console.log(`   Current time: ${now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })}`);
     console.log(`   Slot start: ${startTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })} (${slotTimeString})`);
     console.log(`   Bidding end: ${biddingEndTime.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })}`);
@@ -865,7 +870,7 @@ async function createNextGameIfNeeded() {
   const now = getCurrentISTTime();
   console.log(`🎮 createNextGameIfNeeded called at ${now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' })}`);
   
-  // Get current and next 30-minute slots
+  // Get current and next slot boundaries
   const currentSlot = getCurrentThirtyMinuteSlot(now);
   const nextSlot = getNextThirtyMinuteSlot(now);
   
@@ -1646,7 +1651,7 @@ export function initGameAutomation() {
   logTimerConfig();
   
   // Progressive game creation - create next game when current slot ends
-  const gameCreationCron = '0 */1 * * * *'; // Every minute to check if next game should be created
+  const gameCreationCron = getGameCreationCron();
   cron.schedule(gameCreationCron, createNextGameIfNeeded);
   
   // Process game results - every 30 seconds (more frequent for better responsiveness)

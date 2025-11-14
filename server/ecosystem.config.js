@@ -8,27 +8,27 @@ module.exports = {
       env: {
         NODE_ENV: 'development',
         PORT: 4000,
-        BIDDING_DURATION: 25,
-        BREAK_DURATION: 5,
-        GAME_CREATION_INTERVAL: 30,
+        BIDDING_DURATION: 9,
+        BREAK_DURATION: 1,
+        GAME_CREATION_INTERVAL: 10,
         TESTING_MODE: false,
         TZ: 'Asia/Kolkata'
       },
       env_production: {
         NODE_ENV: 'production',
         PORT: 4000,
-        BIDDING_DURATION: 25,
-        BREAK_DURATION: 5,
-        GAME_CREATION_INTERVAL: 30,
+        BIDDING_DURATION: 9,
+        BREAK_DURATION: 1,
+        GAME_CREATION_INTERVAL: 10,
         TESTING_MODE: false,
         TZ: 'Asia/Kolkata'
       },
       env_staging: {
         NODE_ENV: 'staging',
         PORT: 4000,
-        BIDDING_DURATION: 25,
-        BREAK_DURATION: 5,
-        GAME_CREATION_INTERVAL: 30,
+        BIDDING_DURATION: 9,
+        BREAK_DURATION: 1,
+        GAME_CREATION_INTERVAL: 10,
         TESTING_MODE: false,
         TZ: 'Asia/Kolkata'
       },

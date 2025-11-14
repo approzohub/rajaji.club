@@ -99,7 +99,7 @@ export async function listWithdrawals(req: AuthRequest, res: Response) {
   }
   
   const withdrawals = await Withdrawal.find(filter)
-    .populate('user', 'fullName gameId email')
+    .populate('user', 'fullName gameId email phone')
     .populate('paymentMethod', 'name upiId')
     .populate('processedBy', 'fullName role')
     .sort({ createdAt: -1 })

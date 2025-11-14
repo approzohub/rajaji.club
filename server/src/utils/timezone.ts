@@ -8,6 +8,13 @@ moment.tz.setDefault('Asia/Kolkata');
 
 // Indian Standard Time zone
 const IST_TIMEZONE = 'Asia/Kolkata';
+const SLOT_INTERVAL_MINUTES = Math.max(1, parseInt(process.env.GAME_CREATION_INTERVAL || '30'));
+const MINUTES_PER_DAY = 24 * 60;
+const SLOTS_PER_DAY = Math.max(1, Math.ceil(MINUTES_PER_DAY / SLOT_INTERVAL_MINUTES));
+
+function getSlotAlignedMinutes(minutes: number): number {
+  return Math.floor(minutes / SLOT_INTERVAL_MINUTES) * SLOT_INTERVAL_MINUTES;
+}
 
 /**
  * Convert a date to IST timezone
@@ -123,9 +130,8 @@ export function getTimeDifferenceMinutesIST(date1: Date, date2: Date): number {
  */
 export function getCurrentTimeWindowIST(): string {
   const now = moment().tz(IST_TIMEZONE);
-  const minutes = now.minutes();
-  const slot = Math.floor(minutes / 30) * 30;
-  const timeWindow = now.clone().minutes(slot).seconds(0).milliseconds(0);
+  const slotMinutes = getSlotAlignedMinutes(now.minutes());
+  const timeWindow = now.clone().minutes(slotMinutes).seconds(0).milliseconds(0);
   return timeWindow.toISOString();
 }
 
@@ -135,12 +141,9 @@ export function getCurrentTimeWindowIST(): string {
  */
 export function getNextTimeWindowIST(): string {
   const now = moment().tz(IST_TIMEZONE);
-  const minutes = now.minutes();
-  const slot = Math.floor(minutes / 30) * 30;
-  const timeWindow = now.clone().minutes(slot).seconds(0).milliseconds(0);
-  
-  // Add 30 minutes to get the next window
-  timeWindow.add(30, 'minutes');
+  const slotMinutes = getSlotAlignedMinutes(now.minutes());
+  const timeWindow = now.clone().minutes(slotMinutes).seconds(0).milliseconds(0);
+  timeWindow.add(SLOT_INTERVAL_MINUTES, 'minutes');
   return timeWindow.toISOString();
 }
 
@@ -150,12 +153,9 @@ export function getNextTimeWindowIST(): string {
  */
 export function getPreviousTimeWindowIST(): string {
   const now = moment().tz(IST_TIMEZONE);
-  const minutes = now.minutes();
-  const slot = Math.floor(minutes / 30) * 30;
-  const timeWindow = now.clone().minutes(slot).seconds(0).milliseconds(0);
-  
-  // Subtract 30 minutes to get the previous window
-  timeWindow.subtract(30, 'minutes');
+  const slotMinutes = getSlotAlignedMinutes(now.minutes());
+  const timeWindow = now.clone().minutes(slotMinutes).seconds(0).milliseconds(0);
+  timeWindow.subtract(SLOT_INTERVAL_MINUTES, 'minutes');
   return timeWindow.toISOString();
 }
 
@@ -166,8 +166,7 @@ export function getPreviousTimeWindowIST(): string {
  */
 export function isAtThirtyMinuteInterval(date: Date = new Date()): boolean {
   const istDate = moment(date).tz(IST_TIMEZONE);
-  const minutes = istDate.minutes();
-  return minutes === 0 || minutes === 30;
+  return istDate.minutes() % SLOT_INTERVAL_MINUTES === 0;
 }
 
 /**
@@ -176,14 +175,11 @@ export function isAtThirtyMinuteInterval(date: Date = new Date()): boolean {
  * @returns Next 30-minute interval time
  */
 export function getNextThirtyMinuteInterval(date: Date = new Date()): Date {
-  const istDate = moment(date).tz(IST_TIMEZONE);
+  const istDate = moment(date).tz(IST_TIMEZONE).seconds(0).milliseconds(0);
   const minutes = istDate.minutes();
-  
-  if (minutes < 30) {
-    return istDate.clone().minutes(30).seconds(0).milliseconds(0).toDate();
-  } else {
-    return istDate.clone().add(1, 'hour').minutes(0).seconds(0).milliseconds(0).toDate();
-  }
+  const remainder = minutes % SLOT_INTERVAL_MINUTES;
+  const minutesToAdd = remainder === 0 ? SLOT_INTERVAL_MINUTES : (SLOT_INTERVAL_MINUTES - remainder);
+  return istDate.clone().add(minutesToAdd, 'minutes').toDate();
 }
 
 /**
@@ -193,8 +189,7 @@ export function getNextThirtyMinuteInterval(date: Date = new Date()): Date {
  */
 export function getCurrentThirtyMinuteSlot(date: Date = new Date()): Date {
   const istDate = moment(date).tz(IST_TIMEZONE);
-  const minutes = istDate.minutes();
-  const slotMinutes = minutes < 30 ? 0 : 30;
+  const slotMinutes = getSlotAlignedMinutes(istDate.minutes());
   return istDate.clone().minutes(slotMinutes).seconds(0).milliseconds(0).toDate();
 }
 
@@ -217,14 +212,11 @@ export function getSpecificThirtyMinuteSlot(date: Date, hour: number, minute: nu
  */
 export function getAllTimeSlotsForDate(date: Date = new Date()): Date[] {
   const slots: Date[] = [];
-  const istDate = moment(date).tz(IST_TIMEZONE);
+  const startOfDay = moment(date).tz(IST_TIMEZONE).startOf('day');
   
-  // Generate all 48 slots (00:00 to 23:30)
-  for (let hour = 0; hour < 24; hour++) {
-    for (let minute of [0, 30]) {
-      const slot = istDate.clone().hours(hour).minutes(minute).seconds(0).milliseconds(0);
-      slots.push(slot.toDate());
-    }
+  for (let i = 0; i < SLOTS_PER_DAY; i++) {
+    const slot = startOfDay.clone().add(i * SLOT_INTERVAL_MINUTES, 'minutes');
+    slots.push(slot.toDate());
   }
   
   return slots;
@@ -237,11 +229,8 @@ export function getAllTimeSlotsForDate(date: Date = new Date()): Date[] {
  */
 export function getTimeSlotIndex(date: Date = new Date()): number {
   const istDate = moment(date).tz(IST_TIMEZONE);
-  const hour = istDate.hours();
-  const minute = istDate.minutes();
-  
-  // Calculate slot index: (hour * 2) + (minute >= 30 ? 1 : 0)
-  return (hour * 2) + (minute >= 30 ? 1 : 0);
+  const minutesSinceStart = (istDate.hours() * 60) + istDate.minutes();
+  return Math.floor(minutesSinceStart / SLOT_INTERVAL_MINUTES);
 }
 
 /**
@@ -251,15 +240,13 @@ export function getTimeSlotIndex(date: Date = new Date()): number {
  * @returns Date object for the specified slot
  */
 export function getTimeSlotByIndex(date: Date, slotIndex: number): Date {
-  if (slotIndex < 0 || slotIndex > 47) {
-    throw new Error('Slot index must be between 0 and 47');
+  const totalSlots = SLOTS_PER_DAY;
+  if (slotIndex < 0 || slotIndex >= totalSlots) {
+    throw new Error(`Slot index must be between 0 and ${totalSlots - 1}`);
   }
   
-  const istDate = moment(date).tz(IST_TIMEZONE);
-  const hour = Math.floor(slotIndex / 2);
-  const minute = (slotIndex % 2) * 30;
-  
-  return istDate.clone().hours(hour).minutes(minute).seconds(0).milliseconds(0).toDate();
+  const startOfDay = moment(date).tz(IST_TIMEZONE).startOf('day');
+  return startOfDay.clone().add(slotIndex * SLOT_INTERVAL_MINUTES, 'minutes').toDate();
 }
 
 /**
@@ -268,14 +255,13 @@ export function getTimeSlotByIndex(date: Date, slotIndex: number): Date {
  * @returns Start time of next 30-minute slot
  */
 export function getNextThirtyMinuteSlot(date: Date = new Date()): Date {
-  const istDate = moment(date).tz(IST_TIMEZONE);
+  const istDate = moment(date).tz(IST_TIMEZONE).seconds(0).milliseconds(0);
   const minutes = istDate.minutes();
-  
-  if (minutes < 30) {
-    return istDate.clone().minutes(30).seconds(0).milliseconds(0).toDate();
-  } else {
-    return istDate.clone().add(1, 'hour').minutes(0).seconds(0).milliseconds(0).toDate();
+  const remainder = minutes % SLOT_INTERVAL_MINUTES;
+  if (remainder === 0) {
+    return istDate.clone().add(SLOT_INTERVAL_MINUTES, 'minutes').toDate();
   }
+  return istDate.clone().add(SLOT_INTERVAL_MINUTES - remainder, 'minutes').toDate();
 }
 
 /**
@@ -284,14 +270,14 @@ export function getNextThirtyMinuteSlot(date: Date = new Date()): Date {
  * @returns Start time of previous 30-minute slot
  */
 export function getPreviousThirtyMinuteSlot(date: Date = new Date()): Date {
-  const istDate = moment(date).tz(IST_TIMEZONE);
+  const istDate = moment(date).tz(IST_TIMEZONE).seconds(0).milliseconds(0);
   const minutes = istDate.minutes();
+  const remainder = minutes % SLOT_INTERVAL_MINUTES;
   
-  if (minutes < 30) {
-    return istDate.clone().subtract(1, 'hour').minutes(30).seconds(0).milliseconds(0).toDate();
-  } else {
-    return istDate.clone().minutes(0).seconds(0).milliseconds(0).toDate();
+  if (remainder === 0) {
+    return istDate.clone().subtract(SLOT_INTERVAL_MINUTES, 'minutes').toDate();
   }
+  return istDate.clone().subtract(remainder, 'minutes').toDate();
 }
 
 /**
@@ -303,7 +289,7 @@ export function getPreviousThirtyMinuteSlot(date: Date = new Date()): Date {
 export function isWithinThirtyMinuteSlot(slotStartTime: Date, date: Date = new Date()): boolean {
   const istDate = moment(date).tz(IST_TIMEZONE);
   const slotStart = moment(slotStartTime).tz(IST_TIMEZONE);
-  const slotEnd = slotStart.clone().add(30, 'minutes');
+  const slotEnd = slotStart.clone().add(SLOT_INTERVAL_MINUTES, 'minutes');
   
-  return istDate.isBetween(slotStart, slotEnd, null, '[)'); // [) means inclusive start, exclusive end
-} 
+  return istDate.isBetween(slotStart, slotEnd, null, '[)');
+}
