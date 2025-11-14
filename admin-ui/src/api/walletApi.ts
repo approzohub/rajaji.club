@@ -7,6 +7,7 @@ export interface Wallet {
     _id: string;
     fullName: string;
     email: string;
+    phone?: string;
     role: string;
   };
   main: number;

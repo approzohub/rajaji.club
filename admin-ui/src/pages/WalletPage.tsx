@@ -1,16 +1,20 @@
-import { Box, Typography, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, Chip, Tooltip } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, Chip, Tooltip, IconButton } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useGetWalletsQuery, useRechargeWalletMutation, useManualDebitMutation, useGetUserTransactionsQuery } from '../api/walletApi';
 import { useGetUsersQuery } from '../api/usersApi';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../auth';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import ContentCopy from '@mui/icons-material/ContentCopy';
 
 const walletTypes = [
   { value: 'main', label: 'Main' },
   { value: 'bonus', label: 'Bonus' },
 ];
+
+const objectIdRegex = /^[a-fA-F0-9]{24}$/;
+const normalizePhoneNumber = (value: string) => value.replace(/\D/g, '');
 
 export default function WalletPage() {
   const { data: wallets = [], isLoading, error, refetch } = useGetWalletsQuery();
@@ -22,8 +26,26 @@ export default function WalletPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmRechargeOpen, setConfirmRechargeOpen] = useState(false);
-  const [rechargeFormData, setRechargeFormData] = useState<WalletFormData | null>(null);
+  const [rechargeFormData, setRechargeFormData] = useState<RechargePayload | null>(null);
+  const [rechargeUserIdentifier, setRechargeUserIdentifier] = useState('');
   const { data: users = [] } = useGetUsersQuery();
+  const usersMap = useMemo(() => {
+    const map = new Map<string, (typeof users)[number]>();
+    users.forEach(user => map.set(user._id, user));
+    return map;
+  }, [users]);
+
+  const resolveUserIdFromInput = (input: string): string | null => {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+    if (objectIdRegex.test(trimmed)) return trimmed;
+
+    const normalizedInput = normalizePhoneNumber(trimmed);
+    if (!normalizedInput) return null;
+
+    const matchedUser = users.find(user => normalizePhoneNumber(user.phone || '') === normalizedInput);
+    return matchedUser?._id || null;
+  };
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<WalletFormData>();
   
   // Get current user from auth context
@@ -45,12 +67,68 @@ export default function WalletPage() {
 
 
   const columns: GridColDef[] = [
-    { field: 'userName', headerName: 'User', flex: 1, minWidth: 150 },
-    { field: 'userEmail', headerName: 'Email', flex: 1, minWidth: 200 },
+    {
+      field: 'userId',
+      headerName: 'User ID',
+      flex: 1.5,
+      minWidth: 220,
+      renderCell: (params) => {
+        if (!params || !params.value) return 'N/A';
+        const value = params.value;
+        return (
+          <Tooltip title={value} placement="top">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontFamily: 'monospace',
+                  fontSize: '0.85rem',
+                  wordBreak: 'break-all',
+                  overflowWrap: 'break-word',
+                  flex: 1,
+                }}
+              >
+                {value}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(value);
+                }}
+                title="Copy User ID"
+                sx={{ p: 0.5, flexShrink: 0 }}
+              >
+                <ContentCopy sx={{ fontSize: '0.9rem' }} />
+              </IconButton>
+            </Box>
+          </Tooltip>
+        );
+      }
+    },
+    { field: 'userName', headerName: 'User', flex: 1.2, minWidth: 150 },
+    {
+      field: 'userPhone',
+      headerName: 'Phone',
+      flex: 1,
+      minWidth: 140,
+      renderCell: (params) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontFamily: 'monospace',
+            fontSize: '0.85rem',
+            color: params.value ? 'text.primary' : 'text.secondary',
+          }}
+        >
+          {params.value || 'N/A'}
+        </Typography>
+      )
+    },
     { 
       field: 'userRole', 
       headerName: 'Role', 
-      flex: 1, 
+      flex: 0.8, 
       minWidth: 100,
       align: 'center',
       headerAlign: 'center',
@@ -91,6 +169,22 @@ export default function WalletPage() {
   //   console.log('Transactions data:', transactions);
   // }, [transactions]);
 
+  const walletRows = useMemo(() => wallets.map(wallet => {
+    const matchedUser = wallet.user?._id ? usersMap.get(wallet.user._id) : undefined;
+    const userId = wallet.user?._id || matchedUser?._id || '';
+    const userPhone = wallet.user?.phone || matchedUser?.phone || '';
+    const userName = wallet.user?.fullName || matchedUser?.fullName || wallet.user?.email || matchedUser?.email || userId || 'Unknown';
+    const userRole = wallet.user?.role || matchedUser?.role || '';
+
+    return {
+      ...wallet,
+      userName,
+      userId,
+      userPhone,
+      userRole,
+    };
+  }), [wallets, usersMap]);
+
   const handleRowClick = (params: { row: { user: { _id: string } } }) => {
     setSelectedUserId(params.row.user._id);
     setTransactionModalOpen(true);
@@ -110,6 +204,13 @@ export default function WalletPage() {
   };
 
   interface WalletFormData {
+    userIdentifier: string;
+    amount: number;
+    walletType: string;
+    note?: string;
+  }
+
+  interface RechargePayload {
     userId: string;
     amount: number;
     walletType: string;
@@ -118,8 +219,19 @@ export default function WalletPage() {
 
   const onRecharge = async (data: WalletFormData) => {
     setFormError(null);
-    // Store form data and show confirmation
-    setRechargeFormData({ ...data, amount: Number(data.amount) });
+    const resolvedUserId = resolveUserIdFromInput(data.userIdentifier);
+    if (!resolvedUserId) {
+      setFormError('No user found with that phone number or ID');
+      return;
+    }
+
+    setRechargeFormData({
+      userId: resolvedUserId,
+      amount: Number(data.amount),
+      walletType: data.walletType,
+      note: data.note,
+    });
+    setRechargeUserIdentifier(data.userIdentifier.trim());
     setConfirmRechargeOpen(true);
   };
 
@@ -130,21 +242,37 @@ export default function WalletPage() {
     try {
       await rechargeWallet(rechargeFormData).unwrap();
       setRechargeOpen(false);
-      setConfirmRechargeOpen(false);
-      setRechargeFormData(null);
+      handleCloseRechargeConfirm();
       reset();
       refetch();
     } catch (e: unknown) {
       const apiError = (e as { data?: { error?: string }; error?: string })?.data?.error || (e as { error?: string })?.error || 'Failed to recharge wallet';
       setFormError(apiError);
-      setConfirmRechargeOpen(false);
+      handleCloseRechargeConfirm();
     }
+  };
+
+  const handleCloseRechargeConfirm = () => {
+    setConfirmRechargeOpen(false);
+    setRechargeFormData(null);
+    setRechargeUserIdentifier('');
   };
 
   const onManualDebit = async (data: WalletFormData) => {
     setFormError(null);
+    const resolvedUserId = resolveUserIdFromInput(data.userIdentifier);
+    if (!resolvedUserId) {
+      setFormError('No user found with that phone number or ID');
+      return;
+    }
+
     try {
-      await manualDebit({ ...data, amount: Number(data.amount) }).unwrap();
+      await manualDebit({
+        userId: resolvedUserId,
+        amount: Number(data.amount),
+        walletType: data.walletType,
+        note: data.note,
+      }).unwrap();
       setDebitOpen(false);
       reset();
       refetch();
@@ -168,12 +296,7 @@ export default function WalletPage() {
       {isLoading ? <CircularProgress /> : error ? <Alert severity="error">{(error as unknown as { data?: { error?: string } }).data?.error || 'Failed to load wallets'}</Alert> : (
         <Box sx={{ width: '100%', overflow: 'auto' }}>
           <DataGrid
-            rows={wallets.map(wallet => ({
-              ...wallet,
-              userName: wallet.user?.fullName || wallet.user?.email || wallet.user?._id || 'Unknown',
-              userEmail: wallet.user?.email || '',
-              userRole: wallet.user?.role || '',
-            }))}
+            rows={walletRows}
             columns={columns}
             getRowId={(row) => row._id}
             onRowClick={handleRowClick}
@@ -345,13 +468,13 @@ export default function WalletPage() {
         <form onSubmit={handleSubmit(onRecharge)}>
           <DialogContent>
             <TextField 
-              label="User ID" 
+              label="Phone Number or User ID" 
               fullWidth 
               margin="normal" 
-              {...register('userId', { required: 'User ID is required' })} 
-              error={!!errors.userId} 
-              helperText={errors.userId?.message || 'Enter the user ID directly'} 
-              placeholder="Enter user ID (e.g., 507f1f77bcf86cd799439011)"
+              {...register('userIdentifier', { required: 'Phone number or User ID is required' })} 
+              error={!!errors.userIdentifier} 
+              helperText={errors.userIdentifier?.message || 'Enter a 10-digit phone number or paste the user ID'} 
+              placeholder="e.g., 9876543210 or 507f1f77bcf86cd799439011"
             />
             <TextField label="Amount" type="number" fullWidth margin="normal" {...register('amount', { required: true, min: 1 })} error={!!errors.amount} helperText={errors.amount && 'Amount is required'} />
             <TextField select label="Wallet Type" fullWidth margin="normal" defaultValue="main" {...register('walletType', { required: true })} error={!!errors.walletType} helperText={errors.walletType && 'Wallet type is required'}>
@@ -391,6 +514,9 @@ export default function WalletPage() {
                   const user = users.find(u => u._id === rechargeFormData.userId);
                   return (
                     <Box>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        <strong>Lookup Input:</strong> {rechargeUserIdentifier || rechargeFormData.userId}
+                      </Typography>
                       <Typography variant="body2" color="text.secondary" gutterBottom>
                         <strong>User ID:</strong> {rechargeFormData.userId}
                       </Typography>
@@ -433,7 +559,7 @@ export default function WalletPage() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmRechargeOpen(false)} disabled={isSubmitting}>
+          <Button onClick={handleCloseRechargeConfirm} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button onClick={confirmRecharge} variant="contained" color="warning" disabled={isSubmitting}>
@@ -448,13 +574,13 @@ export default function WalletPage() {
         <form onSubmit={handleSubmit(onManualDebit)}>
           <DialogContent>
             <TextField 
-              label="User ID" 
+              label="Phone Number or User ID" 
               fullWidth 
               margin="normal" 
-              {...register('userId', { required: 'User ID is required' })} 
-              error={!!errors.userId} 
-              helperText={errors.userId?.message || 'Enter the user ID directly'} 
-              placeholder="Enter user ID (e.g., 507f1f77bcf86cd799439011)"
+              {...register('userIdentifier', { required: 'Phone number or User ID is required' })} 
+              error={!!errors.userIdentifier} 
+              helperText={errors.userIdentifier?.message || 'Enter a 10-digit phone number or paste the user ID'} 
+              placeholder="e.g., 9876543210 or 507f1f77bcf86cd799439011"
             />
             <TextField label="Amount" type="number" fullWidth margin="normal" {...register('amount', { required: true, min: 1 })} error={!!errors.amount} helperText={errors.amount && 'Amount is required'} />
             <TextField select label="Wallet Type" fullWidth margin="normal" defaultValue="main" {...register('walletType', { required: true })} error={!!errors.walletType} helperText={errors.walletType && 'Wallet type is required'}>

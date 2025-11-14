@@ -12,6 +12,8 @@ import { LoginModal } from "../components/login-modal";
 import { useAuthStore } from "../../store/auth-store";
 import { socketService } from "../../lib/socket-service";
 
+const GAME_SLOT_INTERVAL_MINUTES = parseInt(process.env.NEXT_PUBLIC_GAME_SLOT_INTERVAL || '10');
+
 
 export default function ResultsPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -133,18 +135,19 @@ export default function ResultsPage() {
         console.log('Sample results:', results.slice(0, 3));
         
         if (results.length > 0) {
-          // Create time intervals (30-minute slots from 12:00 AM to 11:30 PM)
-          const timeIntervals = [];
-          for (let hour = 0; hour < 24; hour++) {
-            for (let minute = 0; minute < 60; minute += 30) {
-              const time = new Date(2024, 0, 1, hour, minute);
-              const timeString = time.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true
-              });
-              timeIntervals.push(timeString);
-            }
+          // Create time intervals based on configured slot interval (default 10 minutes)
+          const timeIntervals: string[] = [];
+          const minutesInDay = 24 * 60;
+          for (let minutes = 0; minutes < minutesInDay; minutes += GAME_SLOT_INTERVAL_MINUTES) {
+            const hours = Math.floor(minutes / 60);
+            const minuteOfHour = minutes % 60;
+            const time = new Date(2024, 0, 1, hours, minuteOfHour);
+            const timeString = time.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            });
+            timeIntervals.push(timeString);
           }
 
           // Group results by date and time

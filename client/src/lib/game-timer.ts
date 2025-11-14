@@ -1,6 +1,9 @@
 import { apiClient } from './api';
 import { formatTimeForDisplay } from './timezone';
 
+const DEFAULT_BIDDING_DURATION_MINUTES = parseInt(process.env.NEXT_PUBLIC_BIDDING_DURATION || '9');
+const DEFAULT_BREAK_DURATION_MINUTES = parseInt(process.env.NEXT_PUBLIC_BREAK_DURATION || '1');
+
 export interface GameTimerState {
   currentTime: number;
   gameStartTime: string;
@@ -94,12 +97,12 @@ class GameTimerService {
     if (this.currentState.isBreak) {
       // Break finished, start new game cycle
       this.currentState.isBreak = false;
-      this.currentState.currentTime = 25 * 60; // 25 minutes
+      this.currentState.currentTime = DEFAULT_BIDDING_DURATION_MINUTES * 60;
       this.currentState.gameStatus = 'open';
     } else {
       // Game finished, start break
       this.currentState.isBreak = true;
-      this.currentState.currentTime = 5 * 60; // 5 minutes
+      this.currentState.currentTime = DEFAULT_BREAK_DURATION_MINUTES * 60;
               this.currentState.gameStatus = 'waiting_result';
       
       // Check for game result

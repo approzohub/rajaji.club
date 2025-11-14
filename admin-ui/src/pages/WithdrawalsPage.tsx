@@ -1,7 +1,7 @@
-import { Box, Typography, CircularProgress, Alert, Chip, IconButton, Tooltip, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider, TextField } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Chip, IconButton, Tooltip, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider, TextField, Popover, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
-import type { GridColDef } from '@mui/x-data-grid';
-import { CheckCircle, Cancel, Visibility } from '@mui/icons-material';
+import type { GridColDef, GridColumnVisibilityModel } from '@mui/x-data-grid';
+import { CheckCircle, Cancel, Visibility, ViewColumn } from '@mui/icons-material';
 import { useGetWithdrawalsQuery, useApproveWithdrawalMutation, useRejectWithdrawalMutation } from '../api/withdrawalsApi';
 import { useGetUsersQuery } from '../api/usersApi';
 import { useState, useMemo } from 'react';
@@ -128,24 +128,105 @@ export default function WithdrawalsPage() {
     }
   };
 
+  const userMap = useMemo(() => {
+    const map = new Map<string, (typeof users)[number]>();
+    users.forEach(user => map.set(user._id, user));
+    return map;
+  }, [users]);
+
+  const rows = useMemo(() => {
+    return withdrawals.map(withdrawal => {
+      let userId = '';
+      let userName = 'Unknown';
+      let userPhone = '';
+
+      if (withdrawal.user && typeof withdrawal.user === 'object') {
+        const populated = withdrawal.user as PopulatedUser;
+        userId = populated._id;
+        userName = populated.fullName || populated.email || populated._id || 'Unknown';
+        userPhone = populated.phone || '';
+      } else if (typeof withdrawal.user === 'string') {
+        userId = withdrawal.user;
+        const found = userMap.get(withdrawal.user);
+        if (found) {
+          userName = found.fullName || found.email || found._id || 'Unknown';
+          userPhone = found.phone || '';
+        } else {
+          userName = withdrawal.user;
+        }
+      }
+
+      return {
+        ...withdrawal,
+        userId,
+        userName,
+        userPhone,
+      };
+    });
+  }, [withdrawals, userMap]);
+
+  const [columnVisibilityAnchor, setColumnVisibilityAnchor] = useState<null | HTMLElement>(null);
+  const [columnVisibilityModel, setColumnVisibilityModel] = useState<GridColumnVisibilityModel>({
+    userName: false,
+    note: false,
+  });
+
+  const handleOpenColumnPopover = (event: React.MouseEvent<HTMLElement>) => {
+    setColumnVisibilityAnchor(event.currentTarget);
+  };
+
+  const handleCloseColumnPopover = () => {
+    setColumnVisibilityAnchor(null);
+  };
+
   const columns: GridColDef[] = [
+    {
+      field: 'userId',
+      headerName: 'User ID',
+      flex: 1.4,
+      minWidth: 250,
+      renderCell: (params) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontFamily: 'monospace',
+            fontSize: '0.85rem',
+            wordBreak: 'break-all',
+            color: params.value ? 'text.primary' : 'text.secondary',
+          }}
+        >
+          {params.value || 'N/A'}
+        </Typography>
+      ),
+    },
     { 
-      field: 'user', 
+      field: 'userName', 
       headerName: 'User', 
       flex: 1,
-      renderCell: (params: { row: import('../api/withdrawalsApi').Withdrawal }) => {
-        if (!params || !params.row || !params.row.user) return <span>N/A</span>;
-        
-        // Handle populated user object
-        if (typeof params.row.user === 'object' && params.row.user !== null) {
-          const userObj = params.row.user as PopulatedUser;
-          return <span>{userObj.fullName ?? 'Unknown'} ({userObj.gameId ?? 'N/A'})</span>;
-        }
-        
-        // Fallback to finding user by ID
-        const user = users.find(u => u._id === params.row.user);
-        return <span>{user ? `${user.fullName} (${user.gameId})` : params.row.user}</span>;
-      }
+      minWidth: 150,
+      renderCell: (params) => (
+        <Typography variant="body2">
+          {params.value || 'Unknown'}
+        </Typography>
+      )
+    },
+    {
+      field: 'userPhone',
+      headerName: 'Phone',
+      flex: 0.9,
+      minWidth: 140,
+      renderCell: (params) => (
+        <Typography
+          variant="body2"
+          sx={{
+            fontFamily: 'monospace',
+            fontSize: '0.85rem',
+            color: params.value ? 'text.primary' : 'text.secondary',
+          }}
+        >
+          {params.value || 'N/A'}
+        </Typography>
+      ),
     },
     { 
       field: 'amount', 
@@ -273,9 +354,9 @@ export default function WithdrawalsPage() {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
         <Typography variant="h5" fontWeight="bold">Withdrawal Requests</Typography>
-        <Box display="flex" gap={1}>
+        <Box display="flex" gap={1} alignItems="center" flexWrap="wrap">
           <Chip 
             label={`Total: ${(withdrawals || []).length}`} 
             color="primary" 
@@ -286,8 +367,53 @@ export default function WithdrawalsPage() {
             color="warning" 
             variant="outlined"
           />
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<ViewColumn />}
+            onClick={handleOpenColumnPopover}
+          >
+            Columns
+          </Button>
         </Box>
       </Box>
+      <Popover
+        open={Boolean(columnVisibilityAnchor)}
+        anchorEl={columnVisibilityAnchor}
+        onClose={handleCloseColumnPopover}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'left',
+        }}
+      >
+        <Box sx={{ p: 2 }}>
+          <Typography variant="subtitle2" gutterBottom>Show Columns</Typography>
+          <FormGroup>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={columnVisibilityModel.userName !== false}
+                  onChange={(_, checked) =>
+                    setColumnVisibilityModel(prev => ({ ...prev, userName: checked }))
+                  }
+                />
+              }
+              label="User"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={columnVisibilityModel.note !== false}
+                  onChange={(_, checked) =>
+                    setColumnVisibilityModel(prev => ({ ...prev, note: checked }))
+                  }
+                />
+              }
+              label="Note"
+            />
+          </FormGroup>
+        </Box>
+      </Popover>
       
       {isLoading || isLoadingUsers ? (
         <Box display="flex" justifyContent="center" p={4}>
@@ -297,30 +423,35 @@ export default function WithdrawalsPage() {
         <Alert severity="error">
           {(error as unknown as { data?: { error?: string } }).data?.error || 'Failed to load withdrawals'}
         </Alert>
-            ) : (
-        <DataGrid
-          rows={withdrawals || []}
-          columns={columns}
-          getRowId={(row) => row._id || Math.random().toString()}
-          autoHeight
-          initialState={{ 
-            pagination: { paginationModel: { pageSize: 10 } },
-            sorting: {
-              sortModel: [{ field: 'createdAt', sort: 'desc' }],
-            },
-          }}
-          pageSizeOptions={[10, 25, 50]}
-          disableRowSelectionOnClick
-          sx={{
-            '& .MuiDataGrid-cell': {
-              fontSize: '0.875rem',
-            },
-            '& .MuiDataGrid-columnHeader': {
-              fontSize: '0.875rem',
-              fontWeight: 600,
-            },
-          }}
-        />
+      ) : (
+        <Box sx={{ width: '100%', overflowX: 'auto' }}>
+          <DataGrid
+            rows={rows}
+            columns={columns}
+            getRowId={(row) => row._id || Math.random().toString()}
+            autoHeight
+            initialState={{ 
+              pagination: { paginationModel: { pageSize: 10 } },
+              sorting: {
+                sortModel: [{ field: 'createdAt', sort: 'desc' }],
+              },
+            }}
+            pageSizeOptions={[10, 25, 50]}
+            disableRowSelectionOnClick
+            columnVisibilityModel={columnVisibilityModel}
+            onColumnVisibilityModelChange={(model) => setColumnVisibilityModel(model)}
+            sx={{
+              minWidth: 800,
+              '& .MuiDataGrid-cell': {
+                fontSize: '0.875rem',
+              },
+              '& .MuiDataGrid-columnHeader': {
+                fontSize: '0.875rem',
+                fontWeight: 600,
+              },
+            }}
+          />
+        </Box>
       )}
       
       {/* View Details Dialog */}
@@ -331,7 +462,7 @@ export default function WithdrawalsPage() {
             <Typography variant="subtitle2" color="text.secondary">User</Typography>
             <Typography variant="body1">
               {selectedUser
-                ? `${selectedUser.fullName ?? 'Unknown'} (${selectedUser.gameId ?? 'N/A'})`
+                ? selectedUser.fullName ?? selectedUser.email ?? selectedUser._id ?? 'Unknown'
                 : typeof selected?.user === 'string'
                   ? selected?.user
                   : 'N/A'}

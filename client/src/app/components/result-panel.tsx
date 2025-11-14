@@ -9,6 +9,8 @@ import { formatTimeForDisplay } from "../../lib/timezone";
 import { useAlert } from "../hooks";
 import { AlertModal } from ".";
 
+const DEFAULT_BIDDING_DURATION_MINUTES = parseInt(process.env.NEXT_PUBLIC_BIDDING_DURATION || '9');
+
 export function ResultPanel({ 
   isRmPlayNow = false, 
   onLoginClick,
@@ -26,7 +28,7 @@ export function ResultPanel({
 
   // Timer state from Socket.IO
   const [timerData, setTimerData] = useState<TimerUpdate>({
-    currentTime: 25 * 60,
+    currentTime: DEFAULT_BIDDING_DURATION_MINUTES * 60,
     isBreak: false,
     gameStatus: 'open',
     activeGameId: null,
