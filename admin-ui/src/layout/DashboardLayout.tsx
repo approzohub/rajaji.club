@@ -101,8 +101,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Toolbar sx={{ minHeight: '64px !important', bgcolor: '#0f0f0f', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
         {!sidebarCollapsed && (
           <Typography variant="h6" noWrap sx={{ color: '#e0e0e0', fontWeight: 600 }}>
-            {currentUser?.role === 'agent' ? 'Agent Panel' : 'Admin Panel'}
-          </Typography>
+          {currentUser?.role === 'agent' ? 'Agent Panel' : 'Admin Panel'}
+        </Typography>
         )}
         <Box sx={{ flexGrow: 1 }} />
         <IconButton

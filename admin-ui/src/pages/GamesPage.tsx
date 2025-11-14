@@ -319,19 +319,19 @@ export default function GamesPage() {
                 }}
               >
                 {params.row._id}
-              </Typography>
-              <IconButton
-                size="small"
+          </Typography>
+          <IconButton
+            size="small"
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigator.clipboard.writeText(params.row._id);
-                }}
-                title="Copy Game ID"
+              navigator.clipboard.writeText(params.row._id);
+            }}
+            title="Copy Game ID"
                 sx={{ p: 0.5, flexShrink: 0 }}
-              >
-                <ContentCopy sx={{ fontSize: '0.9rem' }} />
-              </IconButton>
-            </Box>
+          >
+            <ContentCopy sx={{ fontSize: '0.9rem' }} />
+          </IconButton>
+        </Box>
           </Tooltip>
         );
       },
@@ -646,12 +646,12 @@ export default function GamesPage() {
       {/* Tabs and Column Visibility */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-          <Tabs value={tabValue} onChange={handleTabChange}>
-            <Tab label="All Games" />
-            <Tab label="Open Games" />
-            <Tab label="Waiting Result" />
-            <Tab label="Declared Games" />
-          </Tabs>
+        <Tabs value={tabValue} onChange={handleTabChange}>
+          <Tab label="All Games" />
+          <Tab label="Open Games" />
+          <Tab label="Waiting Result" />
+          <Tab label="Declared Games" />
+        </Tabs>
           <Button
             variant="outlined"
             size="small"
@@ -760,20 +760,20 @@ export default function GamesPage() {
       <TabPanel value={tabValue} index={0}>
         <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', px: 0 }}>
           <Box sx={{ width: '100%', overflowX: 'auto' }}>
-            <DataGrid
-              rows={getDisplayGames()}
-              columns={gameColumns}
-              getRowId={(row) => row._id}
+        <DataGrid
+          rows={getDisplayGames()}
+          columns={gameColumns}
+          getRowId={(row) => row._id}
               columnVisibilityModel={columnVisibilityModel}
               onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel as GridColumnVisibilityModel)}
-              initialState={{
-                pagination: {
-                  paginationModel: { pageSize: 10 },
-                },
-              }}
-              pageSizeOptions={[10, 25, 50]}
-              disableRowSelectionOnClick
-              autoHeight
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 10 },
+            },
+          }}
+          pageSizeOptions={[10, 25, 50]}
+          disableRowSelectionOnClick
+          autoHeight
               sx={{
                 minHeight: 400,
                 width: '100%',
@@ -809,7 +809,7 @@ export default function GamesPage() {
                 outline: 'none',
               },
             }}
-            />
+        />
           </Box>
         </Box>
       </TabPanel>
@@ -817,20 +817,20 @@ export default function GamesPage() {
       <TabPanel value={tabValue} index={1}>
         <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', px: 0 }}>
           <Box sx={{ width: '100%', overflowX: 'auto' }}>
-            <DataGrid
-              rows={getDisplayGames()}
-              columns={gameColumns}
-              getRowId={(row) => row._id}
+        <DataGrid
+          rows={getDisplayGames()}
+          columns={gameColumns}
+          getRowId={(row) => row._id}
               columnVisibilityModel={columnVisibilityModel}
               onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel as GridColumnVisibilityModel)}
-              initialState={{
-                pagination: {
-                  paginationModel: { pageSize: 10 },
-                },
-              }}
-              pageSizeOptions={[10, 25, 50]}
-              disableRowSelectionOnClick
-              autoHeight
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 10 },
+            },
+          }}
+          pageSizeOptions={[10, 25, 50]}
+          disableRowSelectionOnClick
+          autoHeight
               sx={{
                 minHeight: 400,
                 width: '100%',
@@ -866,7 +866,7 @@ export default function GamesPage() {
                 outline: 'none',
               },
             }}
-            />
+        />
           </Box>
         </Box>
       </TabPanel>
@@ -874,20 +874,20 @@ export default function GamesPage() {
       <TabPanel value={tabValue} index={2}>
         <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', px: 0 }}>
           <Box sx={{ width: '100%', overflowX: 'auto' }}>
-            <DataGrid
-              rows={getDisplayGames()}
-              columns={gameColumns}
-              getRowId={(row) => row._id}
+        <DataGrid
+          rows={getDisplayGames()}
+          columns={gameColumns}
+          getRowId={(row) => row._id}
               columnVisibilityModel={columnVisibilityModel}
               onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel as GridColumnVisibilityModel)}
-              initialState={{
-                pagination: {
-                  paginationModel: { pageSize: 10 },
-                },
-              }}
-              pageSizeOptions={[10, 25, 50]}
-              disableRowSelectionOnClick
-              autoHeight
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 10 },
+            },
+          }}
+          pageSizeOptions={[10, 25, 50]}
+          disableRowSelectionOnClick
+          autoHeight
               sx={{
                 minHeight: 400,
                 width: '100%',
@@ -923,7 +923,7 @@ export default function GamesPage() {
                 outline: 'none',
               },
             }}
-            />
+        />
           </Box>
         </Box>
       </TabPanel>
@@ -931,20 +931,20 @@ export default function GamesPage() {
       <TabPanel value={tabValue} index={3}>
         <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', px: 0 }}>
           <Box sx={{ width: '100%', overflowX: 'auto' }}>
-            <DataGrid
-              rows={getDisplayGames()}
-              columns={gameColumns}
-              getRowId={(row) => row._id}
+        <DataGrid
+          rows={getDisplayGames()}
+          columns={gameColumns}
+          getRowId={(row) => row._id}
               columnVisibilityModel={columnVisibilityModel}
               onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel as GridColumnVisibilityModel)}
-              initialState={{
-                pagination: {
-                  paginationModel: { pageSize: 10 },
-                },
-              }}
-              pageSizeOptions={[10, 25, 50]}
-              disableRowSelectionOnClick
-              autoHeight
+          initialState={{
+            pagination: {
+              paginationModel: { pageSize: 10 },
+            },
+          }}
+          pageSizeOptions={[10, 25, 50]}
+          disableRowSelectionOnClick
+          autoHeight
               sx={{
                 minHeight: 400,
                 width: '100%',
@@ -980,7 +980,7 @@ export default function GamesPage() {
                 outline: 'none',
               },
             }}
-            />
+        />
           </Box>
         </Box>
       </TabPanel>

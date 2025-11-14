@@ -54,15 +54,15 @@ export function GameRules() {
       ) : rulesText ? (
         <div
           className="text-white whitespace-pre-line"
-          style={{
-            fontFamily: 'Poppins',
-            fontWeight: 400,
-            fontSize: '16px',
+        style={{
+          fontFamily: 'Poppins',
+          fontWeight: 400,
+          fontSize: '16px',
             lineHeight: '24px',
-            letterSpacing: '0%',
-            color: '#FFFFFF',
-          }}
-        >
+          letterSpacing: '0%',
+          color: '#FFFFFF',
+        }}
+      >
           {rulesText}
         </div>
       ) : (

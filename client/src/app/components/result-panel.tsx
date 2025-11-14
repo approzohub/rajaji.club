@@ -342,16 +342,16 @@ export function ResultPanel({
           <div className="flex items-center gap-0.5">
             {hasResult ? (
               <>
-                <span
+                  <span
                   className={`text-black font-normal ${showOnlyResult ? 'text-[28px]' : 'text-[48px]'} leading-none tracking-[0%]`}
-                  style={{
-                    fontFamily: 'Poppins',
-                    fontWeight: 400,
-                    fontStyle: 'Regular',
-                  }}
-                >
-                  {cardData?.value}
-                </span>
+                    style={{
+                      fontFamily: 'Poppins',
+                      fontWeight: 400,
+                      fontStyle: 'Regular',
+                    }}
+                  >
+                    {cardData?.value}
+                  </span>
                 <SuitIcon suit={cardData?.suit || "♠"} size={showOnlyResult ? 28 : 48} />
               </>
             ) : (

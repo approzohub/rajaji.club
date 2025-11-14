@@ -395,7 +395,7 @@ export default function CardsPage() {
       renderCell: (params) => (
         <Button
           variant="outlined"
-          size="small"
+            size="small"
           onClick={() => handleOpenUnifiedActionsDialog(params.row)}
         >
           Actions

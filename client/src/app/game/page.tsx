@@ -145,6 +145,7 @@ export default function GamePage() {
   const [isLoadingCards, setIsLoadingCards] = useState(true);
   const [currentGameId, setCurrentGameId] = useState<string | null>(null);
   const [isBidPlaced, setIsBidPlaced] = useState(false);
+  const [isGameWaiting, setIsGameWaiting] = useState(false);
   
   // Auth and alert hooks
   const { isLoggedIn } = useAuthStore();
@@ -211,8 +212,15 @@ export default function GamePage() {
     const fetchInitialGameId = async () => {
       try {
         const gameResponse = await apiClient.getGameTimer();
-        if (gameResponse.data?.activeGameId) {
-          setCurrentGameId(gameResponse.data.activeGameId);
+        if (gameResponse.data) {
+          if (gameResponse.data.activeGameId) {
+            setCurrentGameId(gameResponse.data.activeGameId);
+          }
+          setIsGameWaiting(
+            !gameResponse.data.activeGameId ||
+            gameResponse.data.isBreak ||
+            gameResponse.data.gameStatus !== 'open'
+          );
         }
       } catch (error) {
         console.log('Failed to fetch initial game ID:', error);
@@ -225,6 +233,7 @@ export default function GamePage() {
     const unsubscribeTimer = socketService.subscribeToTimer((data) => {
       // Only update game ID when there's a new game (break time ends and new game starts)
       // Check if we have a new game ID that's different from current one
+      setIsGameWaiting(!data.activeGameId || data.isBreak || data.gameStatus !== 'open');
       if (data.activeGameId && data.activeGameId !== currentGameId && !isBidPlaced) {
         console.log('🆕 New game detected, updating game ID:', data.activeGameId);
         setCurrentGameId(data.activeGameId);
@@ -278,22 +287,22 @@ export default function GamePage() {
   // Prepare cart display using active cards data - useMemo to ensure reactivity
   const cartItems = useMemo(() => {
     return Object.entries(cart).map(([key, count]) => {
-      // Find the card data from activeCards array
-      const card = activeCards.find(c => `${c.card}${c.symbol}` === key);
-      if (!card) {
-        // Fallback if card not found
-        const value = key.slice(0, key.length - 1);
-        const suit = key.slice(-1);
-        const price = apiCardPrices[key] || 0;
-        return { value, suit, count, price };
-      }
-      
-      return { 
-        value: card.card, 
-        suit: card.symbol, 
-        count, 
+    // Find the card data from activeCards array
+    const card = activeCards.find(c => `${c.card}${c.symbol}` === key);
+    if (!card) {
+      // Fallback if card not found
+      const value = key.slice(0, key.length - 1);
+      const suit = key.slice(-1);
+      const price = apiCardPrices[key] || 0;
+      return { value, suit, count, price };
+    }
+    
+    return { 
+      value: card.card, 
+      suit: card.symbol, 
+      count, 
         price: card.currentPrice || 0
-      };
+    };
     }).filter(item => item.price > 0); // Filter out items with invalid prices
   }, [cart, activeCards, apiCardPrices]);
   
@@ -306,19 +315,23 @@ export default function GamePage() {
     return amount.toLocaleString('en-IN');
   };
 
-  // Calculate winning amount based on lowest total bid amount (price × count) per card type
-  const minTotalAmount = useMemo(() => {
+  // Calculate winning amount based on highest total bid amount (price × count) per card type
+  const maxTotalAmount = useMemo(() => {
     if (cartItems.length === 0) return 0;
     const totalAmounts = cartItems.map(item => item.price * item.count).filter(amount => amount > 0);
     if (totalAmounts.length === 0) return 0;
-    return Math.min(...totalAmounts);
+    return Math.max(...totalAmounts);
   }, [cartItems]);
   
   const winningAmount = useMemo(() => {
-    return minTotalAmount > 0 ? minTotalAmount * 10 : 0;
-  }, [minTotalAmount]);
+    return maxTotalAmount > 0 ? maxTotalAmount * 10 : 0;
+  }, [maxTotalAmount]);
 
   function handlePayNow() {
+    if (isGameWaiting) {
+      showError('Game has not started yet. Please wait for the next round to begin.');
+      return;
+    }
     // Prevent banned users from attempting to play
     if (user && user.status === 'banned') {
       showError('Your account has been banned. Please contact to admin support');
@@ -727,7 +740,7 @@ export default function GamePage() {
                         fontSize: '16px',
                         lineHeight: '20px',
                         letterSpacing: '0%',
-                        color: '#000000',
+                    color: '#02C060',
                       }}
                     >
                       Winning amount can be up to ₹{formatIndianRupees(winningAmount)}
@@ -737,7 +750,7 @@ export default function GamePage() {
                 <button
                   className="mt-4 w-full bg-[#FFCD01] text-black font-bold py-3 rounded-lg text-lg shadow transition-colors disabled:opacity-50 cursor-pointer"
                   onClick={handlePayNow}
-                  disabled={cartItems.length === 0 || total > balance}
+                  disabled={cartItems.length === 0 || total > balance || isGameWaiting}
                 >
                   PLAY NOW
                 </button>
@@ -840,7 +853,7 @@ export default function GamePage() {
                 {cartItems.length > 0 && total > balance && (
                   <div className="text-center text-red-600 font-bold mb-2">Insufficient balance</div>
                 )}
-                <div className="flex justify-between font-bold text-lg pt-2 mt-2 bg-[#F2F2F2] px-3 py-2 flex-shrink-0 w-full">
+                <div className="flex justify-between font-bold text-lg pt-2 mt-2 bg-[#F2F2F2] px-3 py-2 shrink-0 w-full">
                   <span>TOTAL</span>
                   <span>₹{total}</span>
                 </div>
@@ -848,7 +861,7 @@ export default function GamePage() {
               
               {/* Sticky PAY NOW button for mobile */}
               <div 
-                className="fixed bottom-0 left-0 right-0 z-[9999] bg-[#0a0f1a] py-0 flex justify-center pointer-events-auto"
+                className="fixed bottom-0 left-0 right-0 z-9999 bg-[#0a0f1a] py-0 flex justify-center pointer-events-auto"
                 style={{
                   position: 'fixed',
                   bottom: 0,
@@ -861,7 +874,7 @@ export default function GamePage() {
                 }}
               >
                 <button
-                  className="w-full max-w-md bg-[#FFCD01] text-black py-5  shadow transition-colors cursor-pointer pointer-events-auto touch-manipulation"
+                  className="w-full max-w-md bg-[#FFCD01] text-black py-5  shadow transition-colors cursor-pointer pointer-events-auto touch-manipulation disabled:opacity-50"
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -877,7 +890,7 @@ export default function GamePage() {
                     console.log('Pay now button touch end');
                     handlePayNow();
                   }}
-                  disabled={cartItems.length === 0 || total > balance}
+                  disabled={cartItems.length === 0 || total > balance || isGameWaiting}
                   style={{
                     fontFamily: 'Poppins',
                     fontWeight: 500,
@@ -907,7 +920,7 @@ export default function GamePage() {
                         fontSize: '16px',
                         lineHeight: '20px',
                         letterSpacing: '0%',
-                        color: '#000000',
+                    color: '#02C060',
                       }}
                     >
                       Winning amount can be up to ₹{formatIndianRupees(winningAmount)}

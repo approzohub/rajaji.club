@@ -34,14 +34,14 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => ({
-  // Initial state
-  user: null,
-  token: null,
-  isLoggedIn: false,
-  isLoading: true,
-  mainBalance: 0,
-  bonusBalance: 0,
-  lastActivity: Date.now(),
+      // Initial state
+      user: null,
+      token: null,
+      isLoggedIn: false,
+      isLoading: true,
+      mainBalance: 0,
+      bonusBalance: 0,
+      lastActivity: Date.now(),
 
       // Login action
       login: async (identifier: string, password: string) => {
@@ -291,10 +291,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         }
       },
 
-  // Update last activity timestamp
-  updateLastActivity: () => {
-    const now = Date.now();
-    set({ lastActivity: now });
-    SessionManager.updateActivity();
-  },
+      // Update last activity timestamp
+      updateLastActivity: () => {
+        const now = Date.now();
+        set({ lastActivity: now });
+        SessionManager.updateActivity();
+      },
 })); 

@@ -17,8 +17,8 @@ import {
 } from '../utils/timezone';
 
 // Timer configuration from environment variables
-const BIDDING_DURATION = parseInt(process.env.BIDDING_DURATION || '25');
-const BREAK_DURATION = parseInt(process.env.BREAK_DURATION || '5');
+const BIDDING_DURATION = parseInt(process.env.BIDDING_DURATION || '9');
+const BREAK_DURATION = parseInt(process.env.BREAK_DURATION || '1');
 
 // Helper function to get total game duration
 function getTotalGameDuration(): number {

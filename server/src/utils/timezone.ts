@@ -8,7 +8,7 @@ moment.tz.setDefault('Asia/Kolkata');
 
 // Indian Standard Time zone
 const IST_TIMEZONE = 'Asia/Kolkata';
-const SLOT_INTERVAL_MINUTES = Math.max(1, parseInt(process.env.GAME_CREATION_INTERVAL || '30'));
+const SLOT_INTERVAL_MINUTES = Math.max(1, parseInt(process.env.GAME_CREATION_INTERVAL || '10'));
 const MINUTES_PER_DAY = 24 * 60;
 const SLOTS_PER_DAY = Math.max(1, Math.ceil(MINUTES_PER_DAY / SLOT_INTERVAL_MINUTES));
 

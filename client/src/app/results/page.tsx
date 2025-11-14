@@ -142,12 +142,12 @@ export default function ResultsPage() {
             const hours = Math.floor(minutes / 60);
             const minuteOfHour = minutes % 60;
             const time = new Date(2024, 0, 1, hours, minuteOfHour);
-            const timeString = time.toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: '2-digit',
-              hour12: true
-            });
-            timeIntervals.push(timeString);
+              const timeString = time.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+              });
+              timeIntervals.push(timeString);
           }
 
           // Group results by date and time
@@ -595,20 +595,20 @@ export default function ResultsPage() {
       <WhatsAppFab />
 
       {/* Sticky Play Now/Timeout Button for Mobile - Always show */}
-      <div 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-[#0a0f1a] flex justify-center pointer-events-auto"
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 9999,
-          pointerEvents: 'auto',
-          WebkitTransform: 'translateZ(0)',
-          transform: 'translateZ(0)',
+        <div 
+          className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-[#0a0f1a] flex justify-center pointer-events-auto"
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            pointerEvents: 'auto',
+            WebkitTransform: 'translateZ(0)',
+            transform: 'translateZ(0)',
           minHeight: '60px',
-        }}
-      >
+          }}
+        >
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -616,7 +616,7 @@ export default function ResultsPage() {
             if (gameStatus === 'open') {
               if (isLoggedIn) {
                 console.log('Play now button clicked');
-                window.location.href = '/game';
+              window.location.href = '/game';
               } else {
                 setLoginOpen(true);
               }
@@ -629,7 +629,7 @@ export default function ResultsPage() {
             e.preventDefault();
             if (gameStatus === 'open') {
               if (isLoggedIn) {
-                window.location.href = '/game';
+              window.location.href = '/game';
               } else {
                 setLoginOpen(true);
               }
@@ -662,7 +662,7 @@ export default function ResultsPage() {
         >
           {!isLoggedIn ? 'PLAY NOW' : (gameStatus === 'open' ? 'PLAY NOW' : 'TIME OUT')}
         </button>
-      </div>
+        </div>
       <LoginModal 
         open={loginOpen} 
         onClose={() => { setLoginOpen(false); setLoginError(""); }} 

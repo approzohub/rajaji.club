@@ -415,7 +415,7 @@ async function checkAndCreateMissingGames() {
     // Calculate expected time slots for today based on configured interval
     const expectedSlots: string[] = [];
     const startTime = startOfToday;
-
+    
     const minutesInDay = 24 * 60;
     const slotsPerDay = Math.ceil(minutesInDay / GAME_CREATION_INTERVAL);
     
@@ -879,7 +879,8 @@ async function createNextGameIfNeeded() {
   
   // Check if we already have an active game (open or waiting_result)
   const activeGame = await Game.findOne({
-    status: { $in: ['open', 'waiting_result'] }
+    status: { $in: ['open', 'waiting_result'] },
+    gameEndTime: { $gte: now }
   });
   
   if (activeGame) {

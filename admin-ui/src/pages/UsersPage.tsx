@@ -198,12 +198,7 @@ export default function UsersPage() {
 
 
   // Determine page title based on user role
-  const getPageTitle = () => {
-    if (currentUser?.role === 'agent') {
-      return 'My Users';
-    }
-    return 'Users';
-  };
+  const pageTitle = currentUser?.role === 'agent' ? 'My Users' : 'Users';
 
   // Determine if user can add new users
   const canAddUsers = currentUser?.role === 'admin' || currentUser?.role === 'agent';
@@ -236,7 +231,7 @@ export default function UsersPage() {
   });
 
   const columns: GridColDef[] = [
-    {
+    { 
       field: '_id',
       headerName: 'User ID',
       flex: 1.5,
@@ -260,7 +255,7 @@ export default function UsersPage() {
                 }}
               >
                 {params.row._id}
-              </Typography>
+            </Typography>
               <IconButton
                 size="small"
                 onClick={(e: React.MouseEvent) => {
@@ -351,7 +346,7 @@ export default function UsersPage() {
         );
       }
     },
-    { 
+    {
       field: 'role', 
       headerName: 'Role', 
       flex: 0.8,
@@ -405,7 +400,7 @@ export default function UsersPage() {
   return (
     <Box>
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-        <Typography variant="h5">{getPageTitle()}</Typography>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>{pageTitle}</Typography>
         <Box display="flex" gap={2}>
           {canAddUsers && (
             <Button variant="contained" color="primary" onClick={() => setAddOpen(true)}>
@@ -439,28 +434,28 @@ export default function UsersPage() {
       </Box>
       {isLoading ? <CircularProgress /> : error ? <Alert severity="error">{(error as unknown as { data?: { error?: string } }).data?.error || 'Failed to load users'}</Alert> : (
         <Box sx={{ width: '100%', overflow: 'auto' }}>
-          <DataGrid
-            rows={filteredUsers}
-            columns={columns}
-            getRowId={(row) => row._id}
-            autoHeight
-            initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
-            pageSizeOptions={[10, 25, 50]}
-            disableRowSelectionOnClick
-            sx={{
-              '& .MuiDataGrid-root': {
+        <DataGrid
+          rows={filteredUsers}
+          columns={columns}
+          getRowId={(row) => row._id}
+          autoHeight
+          initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+          pageSizeOptions={[10, 25, 50]}
+          disableRowSelectionOnClick
+          sx={{
+            '& .MuiDataGrid-root': {
                 border: 'none',
-              },
-              '& .MuiDataGrid-main': {
+            },
+            '& .MuiDataGrid-main': {
                 overflowX: 'auto',
-              },
-              '& .MuiDataGrid-cell': {
+            },
+            '& .MuiDataGrid-cell': {
                 borderBottom: '1px solid rgba(224, 224, 224, 1)',
                 padding: '12px 8px',
-                display: 'flex',
-                alignItems: 'center',
-              },
-              '& .MuiDataGrid-columnHeader': {
+              display: 'flex',
+              alignItems: 'center',
+            },
+            '& .MuiDataGrid-columnHeader': {
                 backgroundColor: 'rgba(0, 0, 0, 0.05)',
                 fontWeight: 'bold',
                 borderBottom: '2px solid rgba(224, 224, 224, 1)',
@@ -479,8 +474,8 @@ export default function UsersPage() {
               '& .MuiDataGrid-cell:focus-within': {
                 outline: 'none',
               },
-            }}
-          />
+          }}
+        />
         </Box>
       )}
       {/* Add User Dialog */}
@@ -610,40 +605,40 @@ export default function UsersPage() {
                   Basic Information
                 </Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-                  <Box>
+                <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                      Full Name
-                    </Typography>
+                    Full Name
+                  </Typography>
                     <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500 }}>
-                      {viewUser.fullName}
-                    </Typography>
+                    {viewUser.fullName}
+                  </Typography>
                   </Box>
                   
                   <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                      Phone Number
-                    </Typography>
+                    Phone Number
+                  </Typography>
                     <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500 }}>
-                      {viewUser.phone}
-                    </Typography>
+                    {viewUser.phone}
+                  </Typography>
                   </Box>
                   
                   <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                      User ID
-                    </Typography>
+                    User ID
+                  </Typography>
                     <Typography variant="body2" sx={{ mt: 0.5, fontFamily: 'monospace', wordBreak: 'break-all' }}>
-                      {viewUser._id}
-                    </Typography>
-                  </Box>
-                  
-                  <Box>
+                    {viewUser._id}
+                  </Typography>
+                </Box>
+                
+                <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                      Game ID
-                    </Typography>
+                    Game ID
+                  </Typography>
                     <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500 }}>
-                      {viewUser.gameId}
-                    </Typography>
+                    {viewUser.gameId}
+                  </Typography>
                   </Box>
                 </Box>
               </Box>
@@ -658,101 +653,101 @@ export default function UsersPage() {
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                   <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                      Role
-                    </Typography>
+                    Role
+                  </Typography>
                     <Box sx={{ mt: 0.5 }}>
-                      <Chip 
+                  <Chip 
                         label={viewUser.role?.toUpperCase() || 'N/A'} 
-                        color={viewUser.role === 'admin' ? 'error' : viewUser.role === 'agent' ? 'warning' : 'primary'}
-                        variant="outlined"
-                        size="small"
+                    color={viewUser.role === 'admin' ? 'error' : viewUser.role === 'agent' ? 'warning' : 'primary'}
+                    variant="outlined"
+                    size="small"
                         sx={{ fontWeight: 'bold', textTransform: 'uppercase' }}
-                      />
+                  />
                     </Box>
                   </Box>
                   
                   <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                      Status
-                    </Typography>
+                    Status
+                  </Typography>
                     <Box sx={{ mt: 0.5 }}>
-                      <Chip 
-                        label={viewUser.status === 'active' ? 'Active' : viewUser.status === 'disabled' ? 'Disabled' : 'Banned'} 
-                        color={viewUser.status === 'active' ? 'success' : viewUser.status === 'disabled' ? 'error' : 'warning'}
-                        variant="outlined"
-                        size="small"
-                      />
+                  <Chip 
+                    label={viewUser.status === 'active' ? 'Active' : viewUser.status === 'disabled' ? 'Disabled' : 'Banned'} 
+                    color={viewUser.status === 'active' ? 'success' : viewUser.status === 'disabled' ? 'error' : 'warning'}
+                    variant="outlined"
+                    size="small"
+                  />
                     </Box>
                   </Box>
                   
                   <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                      Created At
-                    </Typography>
+                    Created At
+                  </Typography>
                     <Typography variant="body2" sx={{ mt: 0.5 }}>
-                      {viewUser.createdAt ? new Date(viewUser.createdAt).toLocaleString('en-IN', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit'
-                      }) : 'N/A'}
-                    </Typography>
-                  </Box>
-                  
-                  {viewUser.assignedAgent && (
+                    {viewUser.createdAt ? new Date(viewUser.createdAt).toLocaleString('en-IN', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit'
+                    }) : 'N/A'}
+                  </Typography>
+              </Box>
+              
+              {viewUser.assignedAgent && (
                     <Box>
                       <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                        Assigned Agent
-                      </Typography>
+                    Assigned Agent
+                  </Typography>
                       <Typography variant="body2" sx={{ mt: 0.5, fontWeight: 500 }}>
-                        {viewUser.assignedAgent}
-                      </Typography>
-                    </Box>
-                  )}
+                    {viewUser.assignedAgent}
+                  </Typography>
+                </Box>
+              )}
                 </Box>
               </Box>
-
+              
               {/* Payment Methods Section */}
               {viewUser.paymentMethods && viewUser.paymentMethods.length > 0 && (
                 <>
                   <Divider sx={{ my: 3 }} />
                   <Box sx={{ mb: 3 }}>
                     <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
-                      Payment Methods
-                    </Typography>
+                  Payment Methods
+                </Typography>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                      {viewUser.paymentMethods.map((payment) => (
-                        <Box 
-                          key={payment._id} 
-                          sx={{ 
-                            p: 2, 
-                            border: 1, 
-                            borderColor: payment.isDefault ? 'primary.main' : 'divider',
-                            borderRadius: 1,
+                    {viewUser.paymentMethods.map((payment) => (
+                      <Box 
+                        key={payment._id} 
+                        sx={{ 
+                          p: 2, 
+                          border: 1, 
+                          borderColor: payment.isDefault ? 'primary.main' : 'divider',
+                          borderRadius: 1,
                             backgroundColor: payment.isDefault ? 'action.hover' : 'transparent',
-                          }}
-                        >
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                            <Typography variant="body2" fontWeight="bold">
-                              {payment.name}
-                            </Typography>
-                            {payment.isDefault && (
-                              <Chip 
-                                label="Default" 
-                                color="primary" 
-                                size="small" 
-                                variant="outlined"
-                              />
-                            )}
-                          </Box>
-                          <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
-                            {payment.upiId}
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                          <Typography variant="body2" fontWeight="bold">
+                            {payment.name}
                           </Typography>
+                          {payment.isDefault && (
+                            <Chip 
+                              label="Default" 
+                              color="primary" 
+                              size="small" 
+                              variant="outlined"
+                            />
+                          )}
                         </Box>
-                      ))}
-                    </Box>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                          {payment.upiId}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
                   </Box>
                 </>
               )}
@@ -763,7 +758,7 @@ export default function UsersPage() {
               <Box>
                 <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
                   Actions
-                </Typography>
+                  </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
                   <Tooltip title="Edit User">
                     <Button 

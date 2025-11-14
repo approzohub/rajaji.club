@@ -1,7 +1,7 @@
-import { Box, Typography, CircularProgress, Alert, Chip, IconButton, Tooltip, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider, TextField, Popover, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Chip, IconButton, Tooltip, Snackbar, Dialog, DialogTitle, DialogContent, DialogActions, Button, Divider, TextField, Popover, FormGroup, FormControlLabel, Checkbox, InputAdornment } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef, GridColumnVisibilityModel } from '@mui/x-data-grid';
-import { CheckCircle, Cancel, Visibility, ViewColumn } from '@mui/icons-material';
+import { CheckCircle, Cancel, Visibility, ViewColumn, Search, ContentCopy } from '@mui/icons-material';
 import { useGetWithdrawalsQuery, useApproveWithdrawalMutation, useRejectWithdrawalMutation } from '../api/withdrawalsApi';
 import { useGetUsersQuery } from '../api/usersApi';
 import { useState, useMemo } from 'react';
@@ -36,6 +36,7 @@ export default function WithdrawalsPage() {
   const [noteAction, setNoteAction] = useState<'approve' | 'reject' | null>(null);
   const [noteText, setNoteText] = useState('');
   const [selectedWithdrawalForAction, setSelectedWithdrawalForAction] = useState<Withdrawal | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const selectedUser: PopulatedUser | undefined = useMemo(() => {
     if (!selected) return undefined;
@@ -165,6 +166,25 @@ export default function WithdrawalsPage() {
     });
   }, [withdrawals, userMap]);
 
+  const filteredRows = useMemo(() => {
+    if (!searchTerm.trim()) return rows;
+    const query = searchTerm.trim().toLowerCase();
+    return rows.filter(row => {
+      const name = row.userName?.toLowerCase() || '';
+      const id = row.userId?.toLowerCase() || '';
+      const phone = row.userPhone?.toLowerCase() || '';
+      const status = row.status?.toLowerCase() || '';
+      const note = row.note?.toLowerCase() || '';
+      return (
+        name.includes(query) ||
+        id.includes(query) ||
+        phone.includes(query) ||
+        status.includes(query) ||
+        note.includes(query)
+      );
+    });
+  }, [rows, searchTerm]);
+
   const [columnVisibilityAnchor, setColumnVisibilityAnchor] = useState<null | HTMLElement>(null);
   const [columnVisibilityModel, setColumnVisibilityModel] = useState<GridColumnVisibilityModel>({
     userName: false,
@@ -180,12 +200,13 @@ export default function WithdrawalsPage() {
   };
 
   const columns: GridColDef[] = [
-    {
+    { 
       field: 'userId',
       headerName: 'User ID',
       flex: 1.4,
       minWidth: 250,
-      renderCell: (params) => (
+    renderCell: (params) => (
+      <Box display="flex" alignItems="center" gap={1} sx={{ width: '100%', overflow: 'hidden' }}>
         <Typography
           variant="body2"
           sx={{
@@ -193,11 +214,32 @@ export default function WithdrawalsPage() {
             fontSize: '0.85rem',
             wordBreak: 'break-all',
             color: params.value ? 'text.primary' : 'text.secondary',
+            flexGrow: 1,
+            minWidth: 0,
           }}
         >
           {params.value || 'N/A'}
         </Typography>
-      ),
+        {params.value && (
+          <Tooltip title="Copy User ID">
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(params.value as string);
+                setSnackbar({
+                  open: true,
+                  message: 'User ID copied to clipboard',
+                  severity: 'success',
+                });
+              }}
+            >
+              <ContentCopy sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Box>
+    ),
     },
     { 
       field: 'userName', 
@@ -354,9 +396,10 @@ export default function WithdrawalsPage() {
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} flexWrap="wrap" gap={2}>
-        <Typography variant="h5" fontWeight="bold">Withdrawal Requests</Typography>
-        <Box display="flex" gap={1} alignItems="center" flexWrap="wrap">
+      <Box mb={3} display="flex" flexDirection="column" gap={1.5}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>Withdrawal Requests</Typography>
+          <Box display="flex" gap={1} alignItems="center" flexWrap="wrap">
           <Chip 
             label={`Total: ${(withdrawals || []).length}`} 
             color="primary" 
@@ -367,15 +410,31 @@ export default function WithdrawalsPage() {
             color="warning" 
             variant="outlined"
           />
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<ViewColumn />}
-            onClick={handleOpenColumnPopover}
-          >
-            Columns
-          </Button>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<ViewColumn />}
+              onClick={handleOpenColumnPopover}
+            >
+              Columns
+            </Button>
+          </Box>
         </Box>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Search withdrawals..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search />
+              </InputAdornment>
+            ),
+          }}
+          sx={{ maxWidth: 600 }}
+        />
       </Box>
       <Popover
         open={Boolean(columnVisibilityAnchor)}
@@ -423,34 +482,34 @@ export default function WithdrawalsPage() {
         <Alert severity="error">
           {(error as unknown as { data?: { error?: string } }).data?.error || 'Failed to load withdrawals'}
         </Alert>
-      ) : (
+            ) : (
         <Box sx={{ width: '100%', overflowX: 'auto' }}>
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            getRowId={(row) => row._id || Math.random().toString()}
-            autoHeight
-            initialState={{ 
-              pagination: { paginationModel: { pageSize: 10 } },
-              sorting: {
-                sortModel: [{ field: 'createdAt', sort: 'desc' }],
-              },
-            }}
-            pageSizeOptions={[10, 25, 50]}
-            disableRowSelectionOnClick
+        <DataGrid
+            rows={filteredRows}
+          columns={columns}
+          getRowId={(row) => row._id || Math.random().toString()}
+          autoHeight
+          initialState={{ 
+            pagination: { paginationModel: { pageSize: 10 } },
+            sorting: {
+              sortModel: [{ field: 'createdAt', sort: 'desc' }],
+            },
+          }}
+          pageSizeOptions={[10, 25, 50]}
+          disableRowSelectionOnClick
             columnVisibilityModel={columnVisibilityModel}
             onColumnVisibilityModelChange={(model) => setColumnVisibilityModel(model)}
-            sx={{
+          sx={{
               minWidth: 800,
-              '& .MuiDataGrid-cell': {
-                fontSize: '0.875rem',
-              },
-              '& .MuiDataGrid-columnHeader': {
-                fontSize: '0.875rem',
-                fontWeight: 600,
-              },
-            }}
-          />
+            '& .MuiDataGrid-cell': {
+              fontSize: '0.875rem',
+            },
+            '& .MuiDataGrid-columnHeader': {
+              fontSize: '0.875rem',
+              fontWeight: 600,
+            },
+          }}
+        />
         </Box>
       )}
       
@@ -458,34 +517,31 @@ export default function WithdrawalsPage() {
       <Dialog open={viewOpen} onClose={closeView} maxWidth="sm" fullWidth>
         <DialogTitle>Withdrawal Details</DialogTitle>
         <DialogContent dividers>
-          <Box display="flex" flexDirection="column" gap={1.5}>
+          <Box display="flex" flexDirection="column" gap={2}>
             <Typography variant="subtitle2" color="text.secondary">User</Typography>
-            <Typography variant="body1">
-              {selectedUser
-                ? selectedUser.fullName ?? selectedUser.email ?? selectedUser._id ?? 'Unknown'
-                : typeof selected?.user === 'string'
-                  ? selected?.user
-                  : 'N/A'}
-            </Typography>
+            <Box>
+              <Typography variant="body1">{selectedUser?.fullName || selectedUser?.email || selectedUser?._id || (typeof selected?.user === 'string' ? selected.user : 'Unknown')}</Typography>
+              <Typography variant="body2" color="text.secondary">User ID: {selectedUser?._id || (typeof selected?.user === 'string' ? selected.user : 'N/A')}</Typography>
             {selectedUser?.phone && <Typography variant="body2">Phone: {selectedUser.phone}</Typography>}
             {selectedUser?.email && <Typography variant="body2">Email: {selectedUser.email}</Typography>}
-            <Divider sx={{ my: 1.5 }} />
+            </Box>
+            <Divider />
             <Typography variant="subtitle2" color="text.secondary">Request</Typography>
             <Typography variant="body2">Amount: ₹{(selected?.amount || 0).toLocaleString()}</Typography>
             <Typography variant="body2">Wallet Type: {selected?.walletType || 'N/A'}</Typography>
-            <Divider sx={{ my: 1 }} />
+            <Divider />
             <Typography variant="subtitle2" color="text.secondary">Payment Details</Typography>
             {selected?.paymentMethod ? (
-              <>
+              <Box>
                 <Typography variant="body2">UPI Name: {selected.paymentMethod.name || 'N/A'}</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main', fontSize: '1.1rem' }}>
                   UPI ID: {selected.paymentMethod.upiId || 'N/A'}
                 </Typography>
-              </>
+              </Box>
             ) : (
               <Typography variant="body2" color="error">No payment method found</Typography>
             )}
-            <Divider sx={{ my: 1 }} />
+            <Divider />
             <Typography variant="body2">
               Status: <Chip 
                 label={(() => {
@@ -507,8 +563,8 @@ export default function WithdrawalsPage() {
             {selected?._id && (<Typography variant="body2">Request ID: {selected._id}</Typography>)}
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={closeView}>Close</Button>
+        <DialogActions sx={{ justifyContent: 'flex-end', px: 3, py: 2 }}>
+          <Button onClick={closeView} variant="outlined">Close</Button>
         </DialogActions>
       </Dialog>
 
@@ -564,22 +620,37 @@ export default function WithdrawalsPage() {
               fullWidth
             />
             {selectedWithdrawalForAction && (
-              <Box sx={{ mt: 1, p: 2, borderRadius: 1 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Withdrawal Details:
-                </Typography>
-                <Typography variant="body2">
-                  Amount: ₹{(selectedWithdrawalForAction.amount || 0).toLocaleString()}
-                </Typography>
+              <Box sx={{ mt: 1}}>
+                <Typography variant="body2" color="text.secondary">Withdrawal Details:</Typography>
                 <Typography variant="body2">
                   User: {(() => {
                     if (typeof selectedWithdrawalForAction.user === 'object' && selectedWithdrawalForAction.user !== null) {
                       const userObj = selectedWithdrawalForAction.user as PopulatedUser;
-                      return `${userObj.fullName ?? 'Unknown'} (${userObj.gameId ?? 'N/A'})`;
+                      return userObj.fullName ?? 'Unknown';
                     }
                     const user = users.find(u => u._id === selectedWithdrawalForAction.user);
-                    return user ? `${user.fullName} (${user.gameId})` : selectedWithdrawalForAction.user;
+                    return user ? user.fullName : 'Unknown';
                   })()}
+                </Typography>
+                <Typography variant="body2">
+                  User ID: {(() => {
+                    if (typeof selectedWithdrawalForAction.user === 'object' && selectedWithdrawalForAction.user !== null) {
+                      const userObj = selectedWithdrawalForAction.user as PopulatedUser;
+                      return userObj._id ?? 'N/A';
+                    }
+                    return selectedWithdrawalForAction.user;
+                  })()}
+                </Typography>
+                {(() => {
+                  if (typeof selectedWithdrawalForAction.user === 'object' && selectedWithdrawalForAction.user !== null) {
+                    const userObj = selectedWithdrawalForAction.user as PopulatedUser;
+                    return userObj.phone ? <Typography variant="body2">Phone: {userObj.phone}</Typography> : null;
+                  }
+                  const user = users.find(u => u._id === selectedWithdrawalForAction.user);
+                  return user?.phone ? <Typography variant="body2">Phone: {user.phone}</Typography> : null;
+                })()}
+                <Typography variant="body2">
+                  Amount: ₹{(selectedWithdrawalForAction.amount || 0).toLocaleString()}
                 </Typography>
               </Box>
             )}

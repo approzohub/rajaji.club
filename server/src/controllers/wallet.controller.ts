@@ -4,7 +4,6 @@ import { WalletTransaction } from '../models/wallet-transaction.model';
 import { User } from '../models/user.model';
 import { Bid } from '../models/bid.model';
 import { Withdrawal } from '../models/withdrawal.model';
-import { CommissionSettings } from '../models/commission.model';
 import { z } from 'zod';
 import { Types } from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
@@ -77,6 +76,9 @@ const rechargeSchema = z.object({
   note: z.string().optional(),
 });
 
+const MIN_USER_MAIN_RECHARGE = 100;
+const MIN_AGENT_MAIN_RECHARGE = 500;
+
 export async function rechargeWallet(req: AuthRequest, res: Response) {
   const { id: initiatorId, role: initiatorRole } = req.user || {};
   if (!initiatorId || !initiatorRole) return res.status(401).json({ error: 'Unauthorized' });
@@ -88,18 +90,17 @@ export async function rechargeWallet(req: AuthRequest, res: Response) {
   const user = await User.findById(userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
   
-  // Get commission settings for minimum amounts
-  const commissionSettings = await CommissionSettings.findOne({ isActive: true });
-  const minUserAmount = commissionSettings?.minUserRechargeAmount || 500; // Default fallback
-  const minAgentAmount = commissionSettings?.minAgentRechargeAmount || 1000; // Default fallback
-  
   // Business rules based on initiator role and wallet type
   if (initiatorRole === 'admin') {
     // Admin can recharge anyone to any wallet type without balance check
     // Only apply minimum limits for main wallet recharges, not bonus wallet
     if (walletType === 'main') {
-      if (user.role === 'agent' && amount < minAgentAmount) return res.status(400).json({ error: `Min ₹${minAgentAmount} for agent main wallet` });
-      if (user.role === 'user' && amount < minUserAmount) return res.status(400).json({ error: `Min ₹${minUserAmount} for user main wallet` });
+      if (user.role === 'agent' && amount < MIN_AGENT_MAIN_RECHARGE) {
+        return res.status(400).json({ error: `Min ₹${MIN_AGENT_MAIN_RECHARGE} for agent main wallet` });
+      }
+      if (user.role === 'user' && amount < MIN_USER_MAIN_RECHARGE) {
+        return res.status(400).json({ error: `Min ₹${MIN_USER_MAIN_RECHARGE} for user main wallet` });
+      }
     }
     // Bonus wallet recharges have no minimum limit
   } else if (initiatorRole === 'agent') {
@@ -109,7 +110,9 @@ export async function rechargeWallet(req: AuthRequest, res: Response) {
     }
     if (user.role !== 'user') return res.status(403).json({ error: 'Agents can only recharge users' });
     if (user.assignedAgent?.toString() !== initiatorId) return res.status(403).json({ error: 'You can only recharge your assigned users' });
-    if (amount < minUserAmount) return res.status(400).json({ error: `Min ₹${minUserAmount} for user` });
+    if (amount < MIN_USER_MAIN_RECHARGE) {
+      return res.status(400).json({ error: `Min ₹${MIN_USER_MAIN_RECHARGE} for user` });
+    }
     
     // Check agent's own wallet balance
     const agentWallet = await Wallet.findOne({ user: initiatorId });

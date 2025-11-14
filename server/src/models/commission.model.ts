@@ -54,13 +54,13 @@ const commissionSettingsSchema = new Schema<ICommissionSettings>({
     type: Number, 
     required: true, 
     min: 1,
-    default: 500 // Default minimum recharge ₹500 for users
+    default: 100 // Default minimum recharge ₹100 for users
   },
   minAgentRechargeAmount: { 
     type: Number, 
     required: true, 
     min: 1,
-    default: 1000 // Default minimum recharge ₹1000 for agents
+    default: 500 // Default minimum recharge ₹500 for agents
   },
   isActive: { type: Boolean, default: true },
   updatedBy: { type: Schema.Types.ObjectId, ref: 'User', required: false },

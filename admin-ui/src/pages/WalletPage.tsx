@@ -1,4 +1,4 @@
-import { Box, Typography, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, Chip, Tooltip, IconButton } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, Chip, Tooltip, IconButton, InputAdornment } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useGetWalletsQuery, useRechargeWalletMutation, useManualDebitMutation, useGetUserTransactionsQuery } from '../api/walletApi';
@@ -7,6 +7,7 @@ import { useForm } from 'react-hook-form';
 import { useAuth } from '../auth';
 import { useMemo, useState } from 'react';
 import ContentCopy from '@mui/icons-material/ContentCopy';
+import SearchIcon from '@mui/icons-material/Search';
 
 const walletTypes = [
   { value: 'main', label: 'Main' },
@@ -28,6 +29,7 @@ export default function WalletPage() {
   const [confirmRechargeOpen, setConfirmRechargeOpen] = useState(false);
   const [rechargeFormData, setRechargeFormData] = useState<RechargePayload | null>(null);
   const [rechargeUserIdentifier, setRechargeUserIdentifier] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const { data: users = [] } = useGetUsersQuery();
   const usersMap = useMemo(() => {
     const map = new Map<string, (typeof users)[number]>();
@@ -182,8 +184,28 @@ export default function WalletPage() {
       userId,
       userPhone,
       userRole,
+      userEmail: wallet.user?.email || matchedUser?.email || '',
     };
   }), [wallets, usersMap]);
+
+  const filteredWalletRows = useMemo(() => {
+    if (!searchTerm.trim()) return walletRows;
+    const query = searchTerm.trim().toLowerCase();
+    return walletRows.filter(row => {
+      const name = row.userName?.toLowerCase() || '';
+      const id = row.userId?.toLowerCase() || '';
+      const phone = row.userPhone?.toLowerCase() || '';
+      const email = row.userEmail?.toLowerCase() || '';
+      const role = row.userRole?.toLowerCase() || '';
+      return (
+        name.includes(query) ||
+        id.includes(query) ||
+        phone.includes(query) ||
+        email.includes(query) ||
+        role.includes(query)
+      );
+    });
+  }, [walletRows, searchTerm]);
 
   const handleRowClick = (params: { row: { user: { _id: string } } }) => {
     setSelectedUserId(params.row.user._id);
@@ -284,19 +306,36 @@ export default function WalletPage() {
 
   return (
     <Box>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-        <Typography variant="h5">{getPageTitle()}</Typography>
-        <Box display="flex" gap={2}>
-          <Button variant="contained" onClick={() => setRechargeOpen(true)}>Recharge Wallet</Button>
-          {currentUser?.role === 'admin' && (
-            <Button variant="outlined" color="error" onClick={() => setDebitOpen(true)}>Manual Debit</Button>
-          )}
+      <Box mb={2} display="flex" flexDirection="column" gap={1.5}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+          <Typography variant="h5" sx={{ fontWeight: 700 }}>{getPageTitle()}</Typography>
+          <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+            <Button variant="contained" onClick={() => setRechargeOpen(true)}>Recharge Wallet</Button>
+            {currentUser?.role === 'admin' && (
+              <Button variant="outlined" color="error" onClick={() => setDebitOpen(true)}>Manual Debit</Button>
+            )}
+          </Box>
         </Box>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Search by name, user ID, phone, email..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+          sx={{ maxWidth: 600 }}
+        />
       </Box>
       {isLoading ? <CircularProgress /> : error ? <Alert severity="error">{(error as unknown as { data?: { error?: string } }).data?.error || 'Failed to load wallets'}</Alert> : (
         <Box sx={{ width: '100%', overflow: 'auto' }}>
           <DataGrid
-            rows={walletRows}
+            rows={filteredWalletRows}
             columns={columns}
             getRowId={(row) => row._id}
             onRowClick={handleRowClick}
