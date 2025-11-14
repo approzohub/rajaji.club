@@ -16,9 +16,9 @@
 #    - Removes existing temporary clone directory if present
 #
 # 3. Move Content to public_html Directories
-#    - Moves client/ content to yaeydqfjnw/public_html/
-#    - Moves server/ content to frzeqenypp/public_html/
-#    - Moves admin-ui/ content to pqcqxgqgun/public_html/
+#    - Moves client/ content to applications/yaeydqfjnw/public_html/
+#    - Moves server/ content to applications/frzeqenypp/public_html/
+#    - Moves admin-ui/ content to applications/pqcqxgqgun/public_html/
 #    - DELETES ALL EXISTING CONTENT in each public_html directory before moving
 #    - PRESERVES .env* files (does not delete .env, .env.local, etc.)
 #    - Creates parent directories if they don't exist
@@ -57,9 +57,9 @@ NC='\033[0m' # No Color
 
 # Configuration
 REPO_URL="${REPO_URL:-}"  # Set via environment variable or prompt
-CLIENT_DIR="yaeydqfjnw/public_html"
-SERVER_DIR="frzeqenypp/public_html"
-ADMIN_UI_DIR="pqcqxgqgun/public_html"
+CLIENT_DIR="applications/yaeydqfjnw/public_html"
+SERVER_DIR="applications/frzeqenypp/public_html"
+ADMIN_UI_DIR="applications/pqcqxgqgun/public_html"
 TEMP_CLONE_DIR="rajaji-club-temp"
 
 # Function to print colored output
