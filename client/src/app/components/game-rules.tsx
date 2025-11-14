@@ -18,7 +18,7 @@ export function GameRules() {
         } else {
           setError("Game rules not available");
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("Failed to fetch game rules:", err);
         setError("Failed to load game rules");
       } finally {

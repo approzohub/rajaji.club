@@ -45,6 +45,16 @@
 # - Environment variables (.env files) must be created manually in each project
 # - The script expects .env files to already exist or be created manually
 #
+# WHERE TO RUN THIS SCRIPT:
+# Run this script from the directory where you want the "applications/" folder
+# to be created. For example:
+#   - If you want: /home/user/applications/...
+#   - Run from: /home/user/
+#   - If you want: /var/www/applications/...
+#   - Run from: /var/www/
+#
+# The script will create the "applications/" directory structure if it doesn't exist.
+#
 # ============================================================================
 
 set -e  # Exit on error

@@ -2,15 +2,18 @@
 // In some dev environments, Node injects a global localStorage object whose methods are not real functions.
 // This breaks SSR when libraries attempt to use localStorage.
 if (typeof window === 'undefined' && typeof globalThis.localStorage !== 'undefined') {
-  const ls = (globalThis as any).localStorage;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const ls = (globalThis as { localStorage?: any }).localStorage;
   const isValid = ls && typeof ls.getItem === 'function' && typeof ls.setItem === 'function';
 
   if (!isValid) {
     try {
       // Remove the faulty localStorage so downstream code falls back gracefully
-      delete (globalThis as any).localStorage;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (globalThis as { localStorage?: any }).localStorage;
     } catch {
-      (globalThis as any).localStorage = undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (globalThis as { localStorage?: any }).localStorage = undefined;
     }
   }
 }
@@ -22,7 +25,8 @@ export function safeLocalStorage(): Storage | null {
   // Check if localStorage exists and is accessible
   try {
     // Some dev environments/polyfills might have localStorage but it's not a function
-    const ls = (window as any).localStorage;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const ls = (window as { localStorage?: any }).localStorage;
     if (!ls || typeof ls !== 'object') return null;
 
     // Verify all required methods exist and are functions
