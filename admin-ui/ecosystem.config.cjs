@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'admin-dashboard',
       script: 'node_modules/.bin/serve',
-      args: 'dist -p 3000',
+      args: 'dist -p 3000 --single',
       cwd: './',
       instances: 1,
       autorestart: true,

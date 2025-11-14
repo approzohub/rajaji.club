@@ -1377,44 +1377,44 @@ async function declareWinner(gameId: string, winningCard: string, isRandom: bool
     }`);
     
     if (payoutAmount > 0 && isWinner) {
-      // Credit winner's wallet
-      let wallet = await Wallet.findOne({ user: user._id });
-      if (!wallet) {
-        wallet = await Wallet.create({ user: user._id });
-      }
-      
-      const oldBalance = wallet.main;
-      wallet.main += payoutAmount;
-      await wallet.save();
-      
-      console.log(`✅ Wallet updated for ${user.fullName}: ₹${oldBalance} → ₹${wallet.main}`);
-      
-      // Log payout transaction
-      const transaction = await WalletTransaction.create({
-        user: user._id,
-        initiator: null,
-        initiatorRole: 'system',
-        amount: payoutAmount,
-        walletType: 'main',
-        type: 'bonus',
-        note: `Game win payout for card ${winningCard} in game ${gameId}`
-      });
-      
-      console.log(`✅ Transaction created: ${transaction._id} for ₹${payoutAmount}`);
-      
-      winnerDetails.push({
-        userId: user._id,
-        userName: user.fullName,
-        userEmail: user.email,
-        gameId: user.gameId || 'N/A',
-        bidAmount: bid.totalAmount,
-        payoutAmount: payoutAmount,
-        cardName: bid.cardName,
-        cardType: bid.cardType,
-        cardSuit: bid.cardSuit,
-        quantity: bid.quantity,
-        assignedAgent: user.assignedAgent
-      });
+    // Credit winner's wallet
+    let wallet = await Wallet.findOne({ user: user._id });
+    if (!wallet) {
+      wallet = await Wallet.create({ user: user._id });
+    }
+    
+    const oldBalance = wallet.main;
+    wallet.main += payoutAmount;
+    await wallet.save();
+    
+    console.log(`✅ Wallet updated for ${user.fullName}: ₹${oldBalance} → ₹${wallet.main}`);
+    
+    // Log payout transaction
+    const transaction = await WalletTransaction.create({
+      user: user._id,
+      initiator: null,
+      initiatorRole: 'system',
+      amount: payoutAmount,
+      walletType: 'main',
+      type: 'bonus',
+      note: `Game win payout for card ${winningCard} in game ${gameId}`
+    });
+    
+    console.log(`✅ Transaction created: ${transaction._id} for ₹${payoutAmount}`);
+    
+    winnerDetails.push({
+      userId: user._id,
+      userName: user.fullName,
+      userEmail: user.email,
+      gameId: user.gameId || 'N/A',
+      bidAmount: bid.totalAmount,
+      payoutAmount: payoutAmount,
+      cardName: bid.cardName,
+      cardType: bid.cardType,
+      cardSuit: bid.cardSuit,
+      quantity: bid.quantity,
+      assignedAgent: user.assignedAgent
+    });
     } else {
       console.log(`  ↳ No payout issued for ${user.fullName}; userPayoutResult winner flag = ${userPayoutResult?.winner}`);
     }

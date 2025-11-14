@@ -1,3 +1,5 @@
+import { safeLocalStorage } from './utils';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
 interface ApiResponse<T = unknown> {
@@ -91,15 +93,14 @@ class ApiClient {
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
-    this.token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const storage = safeLocalStorage();
+    this.token = storage ? storage.getItem('authToken') : null;
   }
 
   // Get token from localStorage
   private getStoredToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('authToken');
-    }
-    return null;
+    const storage = safeLocalStorage();
+    return storage ? storage.getItem('authToken') : null;
   }
 
   private async request<T>(
@@ -152,11 +153,12 @@ class ApiClient {
 
   setToken(token: string | null) {
     this.token = token;
-    if (typeof window !== 'undefined') {
+    const storage = safeLocalStorage();
+    if (storage) {
       if (token) {
-        localStorage.setItem('authToken', token);
+        storage.setItem('authToken', token);
       } else {
-        localStorage.removeItem('authToken');
+        storage.removeItem('authToken');
       }
     }
   }
@@ -287,6 +289,11 @@ class ApiClient {
     
     const endpoint = `/games/results${params.toString() ? `?${params.toString()}` : ''}`;
     return this.request(endpoint);
+  }
+
+  // Game Rules API
+  async getGameRules(): Promise<ApiResponse<{ _id?: string; text: string; updatedAt?: string; createdAt?: string }>> {
+    return this.request('/game-rules', { skipAuth: true });
   }
 
   // Results Chart API - New endpoint for results page

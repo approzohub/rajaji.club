@@ -25,6 +25,10 @@ import {
   TableHead,
   TableRow,
   Paper,
+  Tooltip,
+  Checkbox,
+  FormControlLabel,
+  Popover,
 } from '@mui/material';
 import { 
   EmojiEvents, 
@@ -32,9 +36,10 @@ import {
   Visibility, 
   ContentCopy, 
   Close,
+  ViewColumn,
 } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
-import type { GridColDef } from '@mui/x-data-grid';
+import type { GridColDef, GridColumnVisibilityModel } from '@mui/x-data-grid';
 import { 
   useGetGamesQuery, 
   useGetGamesByStatusQuery,
@@ -65,7 +70,7 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`games-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+      {value === index && <Box sx={{ py: { xs: 1, sm: 2, md: 3 }, px: 0 }}>{children}</Box>}
     </div>
   );
 }
@@ -120,6 +125,16 @@ export default function GamesPage() {
   const [openCardBidDetailsDialog, setOpenCardBidDetailsDialog] = useState(false);
   const [openWinnersModal, setOpenWinnersModal] = useState(false);
   const [selectedGameForWinners, setSelectedGameForWinners] = useState<Game | null>(null);
+  const [columnVisibilityAnchor, setColumnVisibilityAnchor] = useState<HTMLButtonElement | null>(null);
+  const [columnVisibilityModel, setColumnVisibilityModel] = useState<GridColumnVisibilityModel>({
+    timeWindow: false,
+    timeRemaining: false,
+    status: true,
+    totalPool: true,
+    profit: true,
+    winningCard: true,
+    actions: true,
+  });
 
   // Get analytics for selected game
   const { data: gameAnalytics = [] } = useGetGameCardAnalyticsQuery(selectedGame?._id || '', {
@@ -283,29 +298,51 @@ export default function GamesPage() {
     {
       field: '_id',
       headerName: 'Game ID',
-      width: 120,
-      renderCell: (params) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
-            {params.row._id.slice(-8)}
-          </Typography>
-          <IconButton
-            size="small"
-            onClick={() => {
-              navigator.clipboard.writeText(params.row._id);
-            }}
-            title="Copy Game ID"
-            sx={{ p: 0.5 }}
-          >
-            <ContentCopy sx={{ fontSize: '0.9rem' }} />
-          </IconButton>
-        </Box>
-      ),
+      flex: 2.0,
+      minWidth: 250,
+      align: 'left',
+      headerAlign: 'left',
+      renderCell: (params) => {
+        if (!params || !params.row) return null;
+        return (
+          <Tooltip title={params.row._id} placement="top">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  fontFamily: 'monospace',
+                  fontSize: '0.875rem',
+                  textAlign: 'left',
+                  width: '100%',
+                  wordBreak: 'break-all',
+                  overflowWrap: 'break-word'
+                }}
+              >
+                {params.row._id}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(params.row._id);
+                }}
+                title="Copy Game ID"
+                sx={{ p: 0.5, flexShrink: 0 }}
+              >
+                <ContentCopy sx={{ fontSize: '0.9rem' }} />
+              </IconButton>
+            </Box>
+          </Tooltip>
+        );
+      },
     },
     {
       field: 'timeWindow',
       headerName: 'Game Time',
-      width: 200,
+      flex: 1.2,
+      minWidth: 180,
+      align: 'left',
+      headerAlign: 'left',
       renderCell: (params) => (
         <Typography variant="body2">
           {new Date(params.row.timeWindow).toLocaleString()}
@@ -313,9 +350,43 @@ export default function GamesPage() {
       ),
     },
     {
+      field: 'timeRemaining',
+      headerName: 'Time Remaining',
+      flex: 1.0,
+      minWidth: 150,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params) => {
+        const timeText = getTimeRemaining(params.row);
+        const isWaiting = timeText === 'Waiting Result';
+        const isDeclared = timeText === 'Result Declared';
+        const isClosed = timeText === 'Bidding Closed';
+        
+        return (
+          <Chip
+            label={timeText}
+            size="small"
+            color={
+              isWaiting ? 'secondary' :
+              isDeclared ? 'info' :
+              isClosed ? 'warning' : 'default'
+            }
+            variant="outlined"
+            sx={{ 
+              fontWeight: 'bold',
+              backgroundColor: isWaiting ? 'rgba(156, 39, 176, 0.1)' : 'transparent'
+            }}
+          />
+        );
+      },
+    },
+    {
       field: 'status',
       headerName: 'Status',
-      width: 150,
+      flex: 1.0,
+      minWidth: 150,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) => {
         const getStatusIcon = (status: string) => {
           switch (status) {
@@ -340,7 +411,10 @@ export default function GamesPage() {
     {
       field: 'totalPool',
       headerName: 'Total Pool',
-      width: 150,
+      flex: 0.8,
+      minWidth: 110,
+      align: 'right',
+      headerAlign: 'right',
       renderCell: (params) => (
         <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
           ₹{params.row.totalPool.toLocaleString()}
@@ -350,7 +424,10 @@ export default function GamesPage() {
     {
       field: 'profit',
       headerName: 'Profit',
-      width: 150,
+      flex: 0.8,
+      minWidth: 110,
+      align: 'right',
+      headerAlign: 'right',
       renderCell: (params) => {
         // Calculate profit: Total Pool - Total Payout
         const totalPool = params.row.totalPool || 0;
@@ -389,58 +466,56 @@ export default function GamesPage() {
     {
       field: 'winningCard',
       headerName: 'Winning Card',
-      width: 200,
+      flex: 0.8,
+      minWidth: 120,
+      align: 'center',
+      headerAlign: 'center',
       renderCell: (params) => {
         // Only show winning card for declared games
         if (params.row.status !== 'result_declared' || !params.row.winningCard) return '-';
         
-        const card = cards.find(c => c.name === params.row.winningCard);
-        return card ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="h6" sx={{ color: getSuitColor(card.suit) }}>
-              {card.symbol}
+        const winningCard = params.row.winningCard;
+        
+        // Check if winningCard is already formatted (contains suit symbol)
+        const isFormatted = /[\u2660-\u2667]/.test(winningCard);
+        
+        if (isFormatted) {
+          // Already formatted, display as-is
+          return (
+            <Typography variant="body2">
+              {winningCard}
             </Typography>
+          );
+        }
+        
+        // Database format (e.g., "king_of_diamonds"), find card and format
+        const card = cards.find(c => c.name === winningCard);
+        if (card) {
+          return (
             <Typography variant="body2">
               {formatCardName(card, 'display')}
             </Typography>
-          </Box>
-        ) : params.row.winningCard;
-      },
-    },
-    {
-      field: 'timeRemaining',
-      headerName: 'Time Remaining',
-      width: 150,
-      renderCell: (params) => {
-        const timeText = getTimeRemaining(params.row);
-        const isWaiting = timeText === 'Waiting Result';
-        const isDeclared = timeText === 'Result Declared';
-        const isClosed = timeText === 'Bidding Closed';
+          );
+        }
         
+        // Fallback: display as-is (shouldn't happen, but just in case)
         return (
-          <Chip
-            label={timeText}
-            size="small"
-            color={
-              isWaiting ? 'secondary' :
-              isDeclared ? 'info' :
-              isClosed ? 'warning' : 'default'
-            }
-            variant="outlined"
-            sx={{ 
-              fontWeight: 'bold',
-              backgroundColor: isWaiting ? 'rgba(156, 39, 176, 0.1)' : 'transparent'
-            }}
-          />
+          <Typography variant="body2">
+            {winningCard.replace(/_/g, ' ').toUpperCase()}
+          </Typography>
         );
       },
     },
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 250,
+      flex: 1.2,
+      minWidth: 200,
+      align: 'center',
+      headerAlign: 'center',
+      sortable: false,
       renderCell: (params) => (
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, justifyContent: 'center', flexWrap: 'wrap' }}>
           <IconButton
             size="small"
             onClick={() => handleOpenCardBidding(params.row)}
@@ -512,12 +587,12 @@ export default function GamesPage() {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
+    <Box sx={{ p: { xs: 1, sm: 2, md: 3 }, width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2, mb: 3 }}>
+        <Typography variant="h4" component="h1" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
           🎮 Game Management
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
           <Chip label="🟢 Open" size="small" color="success" variant="outlined" />
           <Chip label="🟡 Waiting Result" size="small" color="warning" variant="outlined" />
           <Chip label="🔵 Result Declared" size="small" color="info" variant="outlined" />
@@ -525,8 +600,8 @@ export default function GamesPage() {
       </Box>
 
       {/* Summary Cards */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 3, mb: 3 }}>
-        <MuiCard>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: { xs: 2, sm: 3 }, mb: 3, width: '100%', maxWidth: '100%' }}>
+        <MuiCard sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
           <CardContent>
             <Typography color="textSecondary" gutterBottom>
               Total Games
@@ -536,7 +611,7 @@ export default function GamesPage() {
             </Typography>
           </CardContent>
         </MuiCard>
-        <MuiCard>
+        <MuiCard sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
           <CardContent>
             <Typography color="textSecondary" gutterBottom>
               Open Games
@@ -546,7 +621,7 @@ export default function GamesPage() {
             </Typography>
           </CardContent>
         </MuiCard>
-        <MuiCard>
+        <MuiCard sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
           <CardContent>
             <Typography color="textSecondary" gutterBottom>
               Waiting Result
@@ -556,7 +631,7 @@ export default function GamesPage() {
             </Typography>
           </CardContent>
         </MuiCard>
-        <MuiCard>
+        <MuiCard sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
           <CardContent>
             <Typography color="textSecondary" gutterBottom>
               Declared Games
@@ -568,82 +643,346 @@ export default function GamesPage() {
         </MuiCard>
       </Box>
 
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label="All Games" />
-          <Tab label="Open Games" />
-          <Tab label="Waiting Result" />
-          <Tab label="Declared Games" />
-        </Tabs>
+      {/* Tabs and Column Visibility */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Tabs value={tabValue} onChange={handleTabChange}>
+            <Tab label="All Games" />
+            <Tab label="Open Games" />
+            <Tab label="Waiting Result" />
+            <Tab label="Declared Games" />
+          </Tabs>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<ViewColumn />}
+            onClick={(e) => setColumnVisibilityAnchor(e.currentTarget)}
+            sx={{ mr: 2 }}
+          >
+            Columns
+          </Button>
+        </Box>
       </Box>
 
+      {/* Column Visibility Popover */}
+      <Popover
+        open={Boolean(columnVisibilityAnchor)}
+        anchorEl={columnVisibilityAnchor}
+        onClose={() => setColumnVisibilityAnchor(null)}
+        anchorOrigin={{
+          vertical: 'bottom',
+          horizontal: 'right',
+        }}
+        transformOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }}
+      >
+        <Box sx={{ p: 2, minWidth: 200 }}>
+          <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+            Show Columns
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={columnVisibilityModel.timeWindow}
+                  onChange={(e) => setColumnVisibilityModel({ ...columnVisibilityModel, timeWindow: e.target.checked })}
+                  size="small"
+                />
+              }
+              label="Game Time"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={columnVisibilityModel.timeRemaining}
+                  onChange={(e) => setColumnVisibilityModel({ ...columnVisibilityModel, timeRemaining: e.target.checked })}
+                  size="small"
+                />
+              }
+              label="Time Remaining"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={columnVisibilityModel.status}
+                  onChange={(e) => setColumnVisibilityModel({ ...columnVisibilityModel, status: e.target.checked })}
+                  size="small"
+                />
+              }
+              label="Status"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={columnVisibilityModel.totalPool}
+                  onChange={(e) => setColumnVisibilityModel({ ...columnVisibilityModel, totalPool: e.target.checked })}
+                  size="small"
+                />
+              }
+              label="Total Pool"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={columnVisibilityModel.profit}
+                  onChange={(e) => setColumnVisibilityModel({ ...columnVisibilityModel, profit: e.target.checked })}
+                  size="small"
+                />
+              }
+              label="Profit"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={columnVisibilityModel.winningCard}
+                  onChange={(e) => setColumnVisibilityModel({ ...columnVisibilityModel, winningCard: e.target.checked })}
+                  size="small"
+                />
+              }
+              label="Winning Card"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={columnVisibilityModel.actions}
+                  onChange={(e) => setColumnVisibilityModel({ ...columnVisibilityModel, actions: e.target.checked })}
+                  size="small"
+                />
+              }
+              label="Actions"
+            />
+          </Box>
+        </Box>
+      </Popover>
+
       <TabPanel value={tabValue} index={0}>
-        <DataGrid
-          rows={getDisplayGames()}
-          columns={gameColumns}
-          getRowId={(row) => row._id}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10 },
-            },
-          }}
-          pageSizeOptions={[10, 25, 50]}
-          disableRowSelectionOnClick
-          autoHeight
-          sx={{ minHeight: 400 }}
-        />
+        <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', px: 0 }}>
+          <Box sx={{ width: '100%', overflowX: 'auto' }}>
+            <DataGrid
+              rows={getDisplayGames()}
+              columns={gameColumns}
+              getRowId={(row) => row._id}
+              columnVisibilityModel={columnVisibilityModel}
+              onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel as GridColumnVisibilityModel)}
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: 10 },
+                },
+              }}
+              pageSizeOptions={[10, 25, 50]}
+              disableRowSelectionOnClick
+              autoHeight
+              sx={{
+                minHeight: 400,
+                width: '100%',
+                '& .MuiDataGrid-root': {
+                  border: 'none',
+                },
+                '& .MuiDataGrid-main': {
+                  overflowX: 'auto',
+                },
+              '& .MuiDataGrid-cell': {
+                borderBottom: '1px solid rgba(224, 224, 224, 1)',
+                padding: '12px 8px',
+                display: 'flex',
+                alignItems: 'center',
+              },
+              '& .MuiDataGrid-columnHeader': {
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                fontWeight: 'bold',
+                borderBottom: '2px solid rgba(224, 224, 224, 1)',
+                padding: '12px 8px',
+                fontSize: '0.875rem',
+              },
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+              },
+              '& .MuiDataGrid-row:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.02)',
+              },
+              '& .MuiDataGrid-cell:focus': {
+                outline: 'none',
+              },
+              '& .MuiDataGrid-cell:focus-within': {
+                outline: 'none',
+              },
+            }}
+            />
+          </Box>
+        </Box>
       </TabPanel>
 
       <TabPanel value={tabValue} index={1}>
-        <DataGrid
-          rows={getDisplayGames()}
-          columns={gameColumns}
-          getRowId={(row) => row._id}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10 },
-            },
-          }}
-          pageSizeOptions={[10, 25, 50]}
-          disableRowSelectionOnClick
-          autoHeight
-          sx={{ minHeight: 400 }}
-        />
+        <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', px: 0 }}>
+          <Box sx={{ width: '100%', overflowX: 'auto' }}>
+            <DataGrid
+              rows={getDisplayGames()}
+              columns={gameColumns}
+              getRowId={(row) => row._id}
+              columnVisibilityModel={columnVisibilityModel}
+              onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel as GridColumnVisibilityModel)}
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: 10 },
+                },
+              }}
+              pageSizeOptions={[10, 25, 50]}
+              disableRowSelectionOnClick
+              autoHeight
+              sx={{
+                minHeight: 400,
+                width: '100%',
+                '& .MuiDataGrid-root': {
+                  border: 'none',
+                },
+                '& .MuiDataGrid-main': {
+                  overflowX: 'auto',
+                },
+              '& .MuiDataGrid-cell': {
+                borderBottom: '1px solid rgba(224, 224, 224, 1)',
+                padding: '12px 8px',
+                display: 'flex',
+                alignItems: 'center',
+              },
+              '& .MuiDataGrid-columnHeader': {
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                fontWeight: 'bold',
+                borderBottom: '2px solid rgba(224, 224, 224, 1)',
+                padding: '12px 8px',
+                fontSize: '0.875rem',
+              },
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+              },
+              '& .MuiDataGrid-row:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.02)',
+              },
+              '& .MuiDataGrid-cell:focus': {
+                outline: 'none',
+              },
+              '& .MuiDataGrid-cell:focus-within': {
+                outline: 'none',
+              },
+            }}
+            />
+          </Box>
+        </Box>
       </TabPanel>
 
       <TabPanel value={tabValue} index={2}>
-        <DataGrid
-          rows={getDisplayGames()}
-          columns={gameColumns}
-          getRowId={(row) => row._id}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10 },
-            },
-          }}
-          pageSizeOptions={[10, 25, 50]}
-          disableRowSelectionOnClick
-          autoHeight
-          sx={{ minHeight: 400 }}
-        />
+        <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', px: 0 }}>
+          <Box sx={{ width: '100%', overflowX: 'auto' }}>
+            <DataGrid
+              rows={getDisplayGames()}
+              columns={gameColumns}
+              getRowId={(row) => row._id}
+              columnVisibilityModel={columnVisibilityModel}
+              onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel as GridColumnVisibilityModel)}
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: 10 },
+                },
+              }}
+              pageSizeOptions={[10, 25, 50]}
+              disableRowSelectionOnClick
+              autoHeight
+              sx={{
+                minHeight: 400,
+                width: '100%',
+                '& .MuiDataGrid-root': {
+                  border: 'none',
+                },
+                '& .MuiDataGrid-main': {
+                  overflowX: 'auto',
+                },
+              '& .MuiDataGrid-cell': {
+                borderBottom: '1px solid rgba(224, 224, 224, 1)',
+                padding: '12px 8px',
+                display: 'flex',
+                alignItems: 'center',
+              },
+              '& .MuiDataGrid-columnHeader': {
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                fontWeight: 'bold',
+                borderBottom: '2px solid rgba(224, 224, 224, 1)',
+                padding: '12px 8px',
+                fontSize: '0.875rem',
+              },
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+              },
+              '& .MuiDataGrid-row:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.02)',
+              },
+              '& .MuiDataGrid-cell:focus': {
+                outline: 'none',
+              },
+              '& .MuiDataGrid-cell:focus-within': {
+                outline: 'none',
+              },
+            }}
+            />
+          </Box>
+        </Box>
       </TabPanel>
 
       <TabPanel value={tabValue} index={3}>
-        <DataGrid
-          rows={getDisplayGames()}
-          columns={gameColumns}
-          getRowId={(row) => row._id}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10 },
-            },
-          }}
-          pageSizeOptions={[10, 25, 50]}
-          disableRowSelectionOnClick
-          autoHeight
-          sx={{ minHeight: 400 }}
-        />
+        <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', px: 0 }}>
+          <Box sx={{ width: '100%', overflowX: 'auto' }}>
+            <DataGrid
+              rows={getDisplayGames()}
+              columns={gameColumns}
+              getRowId={(row) => row._id}
+              columnVisibilityModel={columnVisibilityModel}
+              onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel as GridColumnVisibilityModel)}
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: 10 },
+                },
+              }}
+              pageSizeOptions={[10, 25, 50]}
+              disableRowSelectionOnClick
+              autoHeight
+              sx={{
+                minHeight: 400,
+                width: '100%',
+                '& .MuiDataGrid-root': {
+                  border: 'none',
+                },
+                '& .MuiDataGrid-main': {
+                  overflowX: 'auto',
+                },
+              '& .MuiDataGrid-cell': {
+                borderBottom: '1px solid rgba(224, 224, 224, 1)',
+                padding: '12px 8px',
+                display: 'flex',
+                alignItems: 'center',
+              },
+              '& .MuiDataGrid-columnHeader': {
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                fontWeight: 'bold',
+                borderBottom: '2px solid rgba(224, 224, 224, 1)',
+                padding: '12px 8px',
+                fontSize: '0.875rem',
+              },
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+              },
+              '& .MuiDataGrid-row:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.02)',
+              },
+              '& .MuiDataGrid-cell:focus': {
+                outline: 'none',
+              },
+              '& .MuiDataGrid-cell:focus-within': {
+                outline: 'none',
+              },
+            }}
+            />
+          </Box>
+        </Box>
       </TabPanel>
 
       {/* Declare Winner Dialog */}
@@ -1053,13 +1392,30 @@ export default function GamesPage() {
                   const uniqueBidders = new Set(cardBids.map(bid => 
                     typeof bid.user === 'string' ? bid.user : bid.user._id
                   )).size;
+                  const hasNoBids = totalBids === 0;
                   
                   return (
-                    <TableRow key={card.name}>
+                    <TableRow 
+                      key={card.name}
+                      sx={{
+                        opacity: hasNoBids ? 0.5 : 1,
+                        '& .MuiTableCell-root': {
+                          color: hasNoBids ? 'text.disabled' : 'inherit',
+                        }
+                      }}
+                    >
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
-                            {card._id.slice(-8)}
+                          <Typography 
+                            variant="body2" 
+                            sx={{ 
+                              fontFamily: 'monospace', 
+                              fontSize: '0.8rem',
+                              wordBreak: 'break-all',
+                              overflowWrap: 'break-word'
+                            }}
+                          >
+                            {card._id}
                           </Typography>
                           <IconButton
                             size="small"
@@ -1068,6 +1424,7 @@ export default function GamesPage() {
                             }}
                             title="Copy Card ID"
                             sx={{ p: 0.5 }}
+                            disabled={hasNoBids}
                           >
                             <ContentCopy sx={{ fontSize: '0.9rem' }} />
                           </IconButton>
@@ -1088,6 +1445,7 @@ export default function GamesPage() {
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
+                              opacity: hasNoBids ? 0.5 : 1,
                             }}
                           />
                           <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
@@ -1104,7 +1462,7 @@ export default function GamesPage() {
                             size="small"
                             variant="outlined"
                             onClick={() => handleOpenCardBidDetails(card.name)}
-                            disabled={totalBids === 0}
+                            disabled={hasNoBids}
                           >
                             View Details
                           </Button>
@@ -1113,6 +1471,7 @@ export default function GamesPage() {
                               size="small"
                               onClick={() => handleDeclareCardWinner(card.name)}
                               title="Declare this card as winner"
+                              disabled={hasNoBids}
                               sx={{ 
                                 color: 'warning.main',
                                 '&:hover': { 

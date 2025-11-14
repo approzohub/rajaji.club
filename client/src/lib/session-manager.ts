@@ -1,3 +1,5 @@
+import { safeLocalStorage } from './utils';
+
 // Session Manager for handling persistent login sessions
 export class SessionManager {
   private static readonly SESSION_KEY = 'rajaJi_session';
@@ -14,13 +16,14 @@ export class SessionManager {
     user: Record<string, unknown>;
     lastActivity: number;
   }) {
-    if (typeof window === 'undefined') return;
+    const storage = safeLocalStorage();
+    if (!storage) return;
 
     try {
-      localStorage.setItem(this.TOKEN_KEY, data.token);
-      localStorage.setItem(this.USER_KEY, JSON.stringify(data.user));
-      localStorage.setItem(this.LAST_ACTIVITY_KEY, data.lastActivity.toString());
-      localStorage.setItem(this.SESSION_KEY, 'active');
+      storage.setItem(this.TOKEN_KEY, data.token);
+      storage.setItem(this.USER_KEY, JSON.stringify(data.user));
+      storage.setItem(this.LAST_ACTIVITY_KEY, data.lastActivity.toString());
+      storage.setItem(this.SESSION_KEY, 'active');
     } catch (error) {
       console.error('Failed to save session:', error);
     }
@@ -33,15 +36,16 @@ export class SessionManager {
     lastActivity: number | null;
     isValid: boolean;
   } {
-    if (typeof window === 'undefined') {
+    const storage = safeLocalStorage();
+    if (!storage) {
       return { token: null, user: null, lastActivity: null, isValid: false };
     }
 
     try {
-      const token = localStorage.getItem(this.TOKEN_KEY);
-      const userStr = localStorage.getItem(this.USER_KEY);
-      const lastActivityStr = localStorage.getItem(this.LAST_ACTIVITY_KEY);
-      const sessionActive = localStorage.getItem(this.SESSION_KEY);
+      const token = storage.getItem(this.TOKEN_KEY);
+      const userStr = storage.getItem(this.USER_KEY);
+      const lastActivityStr = storage.getItem(this.LAST_ACTIVITY_KEY);
+      const sessionActive = storage.getItem(this.SESSION_KEY);
 
       if (!token || !userStr || !lastActivityStr || sessionActive !== 'active') {
         return { token: null, user: null, lastActivity: null, isValid: false };
@@ -67,11 +71,12 @@ export class SessionManager {
 
   // Update last activity
   static updateActivity() {
-    if (typeof window === 'undefined') return;
+    const storage = safeLocalStorage();
+    if (!storage) return;
 
     try {
       const now = Date.now();
-      localStorage.setItem(this.LAST_ACTIVITY_KEY, now.toString());
+      storage.setItem(this.LAST_ACTIVITY_KEY, now.toString());
     } catch (error) {
       console.error('Failed to update activity:', error);
     }
@@ -79,13 +84,14 @@ export class SessionManager {
 
   // Clear session data
   static clearSession() {
-    if (typeof window === 'undefined') return;
+    const storage = safeLocalStorage();
+    if (!storage) return;
 
     try {
-      localStorage.removeItem(this.TOKEN_KEY);
-      localStorage.removeItem(this.USER_KEY);
-      localStorage.removeItem(this.LAST_ACTIVITY_KEY);
-      localStorage.removeItem(this.SESSION_KEY);
+      storage.removeItem(this.TOKEN_KEY);
+      storage.removeItem(this.USER_KEY);
+      storage.removeItem(this.LAST_ACTIVITY_KEY);
+      storage.removeItem(this.SESSION_KEY);
     } catch (error) {
       console.error('Failed to clear session:', error);
     }

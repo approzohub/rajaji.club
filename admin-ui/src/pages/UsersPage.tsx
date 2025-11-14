@@ -1,4 +1,4 @@
-import { Box, Typography, Button, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, DialogContentText, Chip, InputAdornment } from '@mui/material';
+import { Box, Typography, Button, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, DialogActions, TextField, MenuItem, DialogContentText, Chip, InputAdornment, Divider, IconButton } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
@@ -14,13 +14,13 @@ import {
   useBanUserMutation,
   useActivateUserMutation,
 } from '../api/usersApi';
-import { useUpdatePasswordMutation } from '../api/authApi';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockIcon from '@mui/icons-material/Lock';
 import GavelIcon from '@mui/icons-material/Gavel';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import ContentCopy from '@mui/icons-material/ContentCopy';
 import Tooltip from '@mui/material/Tooltip';
 import { useAuth } from '../auth';
 import { useState, useEffect } from 'react';
@@ -60,7 +60,6 @@ export default function UsersPage() {
   const [changeUserPassword] = useChangeUserPasswordMutation();
   const [banUser] = useBanUserMutation();
   const [activateUser] = useActivateUserMutation();
-  const [updateMyPassword] = useUpdatePasswordMutation();
 
   // Get current user from auth context
   const { user: currentUser } = useAuth();
@@ -75,8 +74,6 @@ export default function UsersPage() {
   const [passwordChangeOpen, setPasswordChangeOpen] = useState(false);
   const [passwordChangeUser, setPasswordChangeUser] = useState<User | null>(null);
   const [passwordChangeError, setPasswordChangeError] = useState<string | null>(null);
-  const [myPasswordChangeOpen, setMyPasswordChangeOpen] = useState(false);
-  const [myPasswordChangeError, setMyPasswordChangeError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewUserOpen, setViewUserOpen] = useState(false);
   const [viewUser, setViewUser] = useState<User | null>(null);
@@ -84,7 +81,6 @@ export default function UsersPage() {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<CreateUserForm>({ resolver: zodResolver(createUserSchema) });
   const { register: editRegister, handleSubmit: handleEditSubmit, reset: resetEdit, formState: { errors: editErrors, isSubmitting: isEditSubmitting } } = useForm<EditUserForm>({ resolver: zodResolver(editUserSchema) });
   const { register: passwordRegister, handleSubmit: handlePasswordSubmit, reset: resetPassword, formState: { errors: passwordErrors, isSubmitting: isPasswordSubmitting } } = useForm<ChangePasswordForm>({ resolver: zodResolver(changePasswordSchema) });
-  const { register: myPasswordRegister, handleSubmit: handleMyPasswordSubmit, reset: resetMyPassword, formState: { errors: myPasswordErrors, isSubmitting: isMyPasswordSubmitting } } = useForm<ChangePasswordForm>({ resolver: zodResolver(changePasswordSchema) });
 
   // Debug form state
   useEffect(() => {
@@ -200,18 +196,6 @@ export default function UsersPage() {
     }
   };
 
-  const handleMyPasswordChangeSubmit = async (data: ChangePasswordForm) => {
-    setMyPasswordChangeError(null);
-    try {
-      await updateMyPassword({ newPassword: data.newPassword }).unwrap();
-      setMyPasswordChangeOpen(false);
-      resetMyPassword();
-    } catch (e) {
-      console.error('My password change error:', e);
-      const apiError = (e as { data?: { error?: string }; error?: string })?.data?.error || (e as { error?: string })?.error || 'Failed to change password';
-      setMyPasswordChangeError(apiError);
-    }
-  };
 
   // Determine page title based on user role
   const getPageTitle = () => {
@@ -252,13 +236,54 @@ export default function UsersPage() {
   });
 
   const columns: GridColDef[] = [
+    {
+      field: '_id',
+      headerName: 'User ID',
+      flex: 1.5,
+      minWidth: 200,
+      align: 'left',
+      headerAlign: 'left',
+      renderCell: (params) => {
+        if (!params || !params.row) return null;
+        return (
+          <Tooltip title={params.row._id} placement="top">
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  fontFamily: 'monospace',
+                  fontSize: '0.875rem',
+                  textAlign: 'left',
+                  width: '100%',
+                  wordBreak: 'break-all',
+                  overflowWrap: 'break-word'
+                }}
+              >
+                {params.row._id}
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(params.row._id);
+                }}
+                title="Copy User ID"
+                sx={{ p: 0.5, flexShrink: 0 }}
+              >
+                <ContentCopy sx={{ fontSize: '0.9rem' }} />
+              </IconButton>
+            </Box>
+          </Tooltip>
+        );
+      }
+    },
     { 
       field: 'fullName', 
       headerName: 'Full Name', 
-      flex: 0.8,
-      minWidth: 120,
-      align: 'center',
-      headerAlign: 'center',
+      flex: 1.0,
+      minWidth: 150,
+      align: 'left',
+      headerAlign: 'left',
       renderCell: (params) => {
         if (!params || !params.row) return null;
         return (
@@ -268,7 +293,7 @@ export default function UsersPage() {
               textOverflow: 'ellipsis', 
               whiteSpace: 'nowrap',
               maxWidth: '100%',
-              textAlign: 'center',
+              textAlign: 'left',
               width: '100%'
             }}>
               {params.row.fullName}
@@ -278,111 +303,19 @@ export default function UsersPage() {
       }
     },
     { 
-      field: 'email', 
-      headerName: 'Email', 
-      flex: 1.0,
-      minWidth: 150,
-      align: 'center',
-      headerAlign: 'center',
-      renderCell: (params: { row?: { email?: string } }) => {
-        if (!params || !params.row) return 'No email';
-        const email = params.row.email || 'No email';
-        return (
-          <Tooltip title={email} placement="top">
-            <Typography variant="body2" sx={{ 
-              overflow: 'hidden', 
-              textOverflow: 'ellipsis', 
-              whiteSpace: 'nowrap',
-              maxWidth: '100%',
-              textAlign: 'center',
-              width: '100%'
-            }}>
-              {email}
-            </Typography>
-          </Tooltip>
-        );
-      }
-    },
-    {
-      field: '_id',
-      headerName: 'User ID',
-      flex: 2.0,
-      minWidth: 200,
-      align: 'center',
-      headerAlign: 'center',
-      renderCell: (params) => {
-        if (!params || !params.row) return null;
-        return (
-          <Tooltip title={params.row._id} placement="top">
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%'
-            }}>
-              <Chip
-                label={params.row._id.substring(0, 20) + '...'}
-                color="primary"
-                variant="outlined"
-                size="small"
-                sx={{
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold',
-                  minWidth: 'fit-content',
-                  height: '32px',
-                  justifyContent: 'center',
-                  '& .MuiChip-label': {
-                    px: 2,
-                    whiteSpace: 'nowrap',
-                    textAlign: 'center',
-                    fontSize: '0.8rem'
-                  }
-                }}
-              />
-            </Box>
-          </Tooltip>
-        );
-      }
-    },
-    { 
       field: 'phone', 
       headerName: 'Phone', 
-      flex: 0.8,
-      minWidth: 120,
-      align: 'center',
-      headerAlign: 'center',
+      flex: 1.0,
+      minWidth: 130,
+      align: 'left',
+      headerAlign: 'left',
       renderCell: (params) => {
         if (!params || !params.row) return null;
         return (
           <Tooltip title={params.row.phone} placement="top">
-            <Typography variant="body2" sx={{ textAlign: 'center', width: '100%' }}>
+            <Typography variant="body2" sx={{ textAlign: 'left', width: '100%' }}>
               {params.row.phone}
             </Typography>
-          </Tooltip>
-        );
-      }
-    },
-    { 
-      field: 'role', 
-      headerName: 'Role', 
-      flex: 0.6,
-      minWidth: 80,
-      align: 'center',
-      headerAlign: 'center',
-      renderCell: (params) => {
-        if (!params || !params.row) return null;
-        return (
-          <Tooltip title={params.row.role} placement="top">
-            <Chip
-              label={params.row.role}
-              color={params.row.role === 'admin' ? 'error' : params.row.role === 'agent' ? 'warning' : 'primary'}
-              variant="outlined"
-              size="small"
-              sx={{
-                fontSize: '0.75rem',
-                fontWeight: 'bold'
-              }}
-            />
           </Tooltip>
         );
       }
@@ -390,8 +323,8 @@ export default function UsersPage() {
     {
       field: 'status', 
       headerName: 'Status', 
-      flex: 0.7,
-      minWidth: 100,
+      flex: 0.8,
+      minWidth: 110,
       align: 'center',
       headerAlign: 'center',
       renderCell: (params) => {
@@ -418,85 +351,52 @@ export default function UsersPage() {
         );
       }
     },
-    {
-      field: 'createdAt',
-      headerName: 'Created At',
-      flex: 1.3,
-      minWidth: 180,
+    { 
+      field: 'role', 
+      headerName: 'Role', 
+      flex: 0.8,
+      minWidth: 100,
       align: 'center',
       headerAlign: 'center',
-      renderCell: (params: { row?: { createdAt?: string; updatedAt?: string } }) => {
-        const row = params?.row;
-        const dateValue = row?.createdAt || row?.updatedAt;
-        if (!dateValue) return '';
-        
-        const d = new Date(dateValue);
-        if (isNaN(d.getTime())) return '';
-        
-        const formattedDate = d.toLocaleString('en-IN', {
-          year: 'numeric', month: 'short', day: '2-digit',
-          hour: '2-digit', minute: '2-digit', second: '2-digit'
-        });
-        
+      renderCell: (params) => {
+        if (!params || !params.row) return null;
         return (
-          <Tooltip title={formattedDate} placement="top">
-            <Typography variant="body2" sx={{ 
-              overflow: 'hidden', 
-              textOverflow: 'ellipsis', 
-              whiteSpace: 'nowrap',
-              maxWidth: '100%',
-              textAlign: 'center',
-              width: '100%'
-            }}>
-              {formattedDate}
-            </Typography>
+          <Tooltip title={params.row.role} placement="top">
+            <Chip
+              label={params.row.role?.toUpperCase() || 'N/A'}
+              color={params.row.role === 'admin' ? 'error' : params.row.role === 'agent' ? 'warning' : 'primary'}
+              variant="outlined"
+              size="small"
+              sx={{
+                fontSize: '0.75rem',
+                fontWeight: 'bold',
+                textTransform: 'uppercase'
+              }}
+            />
           </Tooltip>
         );
       }
     },
     {
-      field: 'actions',
-      headerName: 'Actions',
-      flex: 0.8,
-      minWidth: 160,
+      field: 'view',
+      headerName: 'View',
+      flex: 0.6,
+      minWidth: 80,
       align: 'center',
       headerAlign: 'center',
       sortable: false,
       renderCell: (params) => {
         if (!params || !params.row) return null;
-        const row = params.row;
-        
         return (
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 0.5,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Tooltip title="View Details"><Button size="small" sx={{ minWidth: 'auto', p: 0.5 }} onClick={() => handleViewUser(row)}><VisibilityIcon fontSize="small" /></Button></Tooltip>
-            <Tooltip title="Edit"><Button size="small" sx={{ minWidth: 'auto', p: 0.5 }} onClick={() => handleEdit(row)}><EditIcon fontSize="small" /></Button></Tooltip>
-            {(currentUser?.role === 'admin' || (currentUser?.role === 'agent' && row?.assignedAgent === currentUser?.id)) && (
-              <Tooltip title="Change Password"><Button size="small" sx={{ minWidth: 'auto', p: 0.5 }} onClick={() => handlePasswordChange(row)}><LockIcon fontSize="small" /></Button></Tooltip>
-            )}
-
-            {row.status === 'active' ? (
-              // Only Ban (no Disable)
-              <Tooltip title="Ban"><Button size="small" sx={{ minWidth: 'auto', p: 0.5 }} onClick={() => banUser(row._id)}><GavelIcon fontSize="small" /></Button></Tooltip>
-            ) : row.status === 'disabled' ? (
-              // Show Activate and Ban
-              <>
-                <Tooltip title="Activate"><Button size="small" color="success" sx={{ minWidth: 'auto', p: 0.5 }} onClick={() => activateUser(row._id)}><CheckCircleIcon fontSize="small" /></Button></Tooltip>
-                <Tooltip title="Ban"><Button size="small" sx={{ minWidth: 'auto', p: 0.5 }} onClick={() => banUser(row._id)}><GavelIcon fontSize="small" /></Button></Tooltip>
-              </>
-            ) : row.status === 'banned' ? (
-              // Allow Activate when banned
-              <Tooltip title="Activate"><Button size="small" color="success" sx={{ minWidth: 'auto', p: 0.5 }} onClick={() => activateUser(row._id)}><CheckCircleIcon fontSize="small" /></Button></Tooltip>
-            ) : null}
-
-            <Tooltip title="Delete"><Button size="small" color="error" sx={{ minWidth: 'auto', p: 0.5 }} onClick={() => handleDelete(row._id)}><DeleteIcon fontSize="small" /></Button></Tooltip>
-          </Box>
+          <Tooltip title="View Full Details">
+            <Button 
+              size="small" 
+              sx={{ minWidth: 'auto', p: 0.5 }} 
+              onClick={() => handleViewUser(params.row)}
+            >
+              <VisibilityIcon fontSize="small" />
+            </Button>
+          </Tooltip>
         );
       },
     },
@@ -507,11 +407,6 @@ export default function UsersPage() {
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
         <Typography variant="h5">{getPageTitle()}</Typography>
         <Box display="flex" gap={2}>
-          {currentUser?.role === 'admin' && (
-            <Button variant="outlined" color="primary" onClick={() => setMyPasswordChangeOpen(true)}>
-              Change My Password
-            </Button>
-          )}
           {canAddUsers && (
             <Button variant="contained" color="primary" onClick={() => setAddOpen(true)}>
               Add User
@@ -543,35 +438,50 @@ export default function UsersPage() {
         )}
       </Box>
       {isLoading ? <CircularProgress /> : error ? <Alert severity="error">{(error as unknown as { data?: { error?: string } }).data?.error || 'Failed to load users'}</Alert> : (
-        <DataGrid
-          rows={filteredUsers}
-          columns={columns}
-          getRowId={(row) => row._id}
-          autoHeight
-          initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
-          pageSizeOptions={[10, 25, 50]}
-          disableRowSelectionOnClick
-          sx={{
-            '& .MuiDataGrid-root': {
-              minWidth: '1200px', // Force minimum width
-            },
-            '& .MuiDataGrid-main': {
-              overflow: 'auto', // Enable horizontal scroll
-            },
-            '& .MuiDataGrid-cell': {
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center'
-            },
-            '& .MuiDataGrid-columnHeader': {
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center'
-            }
-          }}
-        />
+        <Box sx={{ width: '100%', overflow: 'auto' }}>
+          <DataGrid
+            rows={filteredUsers}
+            columns={columns}
+            getRowId={(row) => row._id}
+            autoHeight
+            initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+            pageSizeOptions={[10, 25, 50]}
+            disableRowSelectionOnClick
+            sx={{
+              '& .MuiDataGrid-root': {
+                border: 'none',
+              },
+              '& .MuiDataGrid-main': {
+                overflowX: 'auto',
+              },
+              '& .MuiDataGrid-cell': {
+                borderBottom: '1px solid rgba(224, 224, 224, 1)',
+                padding: '12px 8px',
+                display: 'flex',
+                alignItems: 'center',
+              },
+              '& .MuiDataGrid-columnHeader': {
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+                fontWeight: 'bold',
+                borderBottom: '2px solid rgba(224, 224, 224, 1)',
+                padding: '12px 8px',
+                fontSize: '0.875rem',
+              },
+              '& .MuiDataGrid-columnHeaders': {
+                backgroundColor: 'rgba(0, 0, 0, 0.05)',
+              },
+              '& .MuiDataGrid-row:hover': {
+                backgroundColor: 'rgba(0, 0, 0, 0.02)',
+              },
+              '& .MuiDataGrid-cell:focus': {
+                outline: 'none',
+              },
+              '& .MuiDataGrid-cell:focus-within': {
+                outline: 'none',
+              },
+            }}
+          />
+        </Box>
       )}
       {/* Add User Dialog */}
       <Dialog open={addOpen} onClose={() => setAddOpen(false)} maxWidth="xs" fullWidth>
@@ -673,169 +583,296 @@ export default function UsersPage() {
           </DialogActions>
         </form>
       </Dialog>
-      {/* Change My Password Dialog */}
-      <Dialog open={myPasswordChangeOpen} onClose={() => setMyPasswordChangeOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>Change My Password</DialogTitle>
-        <form onSubmit={handleMyPasswordSubmit(handleMyPasswordChangeSubmit)}>
-          <DialogContent>
-            <DialogContentText sx={{ mb: 2 }}>
-              Change password for: <strong>{currentUser?.fullName}</strong> ({currentUser?.email})
-            </DialogContentText>
-            <TextField 
-              label="New Password" 
-              type="password" 
-              fullWidth 
-              margin="normal" 
-              {...myPasswordRegister('newPassword')} 
-              error={!!myPasswordErrors.newPassword} 
-              helperText={myPasswordErrors.newPassword?.message} 
-            />
-            {myPasswordChangeError && <Alert severity="error" sx={{ mt: 2 }}>{myPasswordChangeError}</Alert>}
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setMyPasswordChangeOpen(false)} disabled={isMyPasswordSubmitting}>Cancel</Button>
-            <Button type="submit" variant="contained" disabled={isMyPasswordSubmitting}>
-              {isMyPasswordSubmitting ? 'Changing...' : 'Change Password'}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
-      
       {/* View User Details Dialog */}
       <Dialog open={viewUserOpen} onClose={() => setViewUserOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>User Details</DialogTitle>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Typography variant="h6" component="span">
+              User Details
+            </Typography>
+            {viewUser && (
+              <Chip 
+                label={viewUser.role?.toUpperCase() || 'N/A'} 
+                color={viewUser.role === 'admin' ? 'error' : viewUser.role === 'agent' ? 'warning' : 'primary'}
+                variant="outlined"
+                size="small"
+                sx={{ fontWeight: 'bold', textTransform: 'uppercase' }}
+              />
+            )}
+          </Box>
+        </DialogTitle>
         <DialogContent>
           {viewUser && (
             <Box sx={{ mt: 2 }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 3 }}>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Full Name
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {viewUser.fullName}
-                  </Typography>
+              {/* Basic Information Section */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
+                  Basic Information
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                      Full Name
+                    </Typography>
+                    <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500 }}>
+                      {viewUser.fullName}
+                    </Typography>
+                  </Box>
                   
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Email
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {viewUser.email || 'No email provided'}
-                  </Typography>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                      Phone Number
+                    </Typography>
+                    <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500 }}>
+                      {viewUser.phone}
+                    </Typography>
+                  </Box>
                   
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Phone Number
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {viewUser.phone}
-                  </Typography>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                      User ID
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 0.5, fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                      {viewUser._id}
+                    </Typography>
+                  </Box>
                   
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    User ID
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2, fontFamily: 'monospace' }}>
-                    {viewUser._id}
-                  </Typography>
-                </Box>
-                
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Game ID
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {viewUser.gameId}
-                  </Typography>
-                  
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Role
-                  </Typography>
-                  <Chip 
-                    label={viewUser.role} 
-                    color={viewUser.role === 'admin' ? 'error' : viewUser.role === 'agent' ? 'warning' : 'primary'}
-                    variant="outlined"
-                    size="small"
-                    sx={{ mb: 2 }}
-                  />
-                  
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Status
-                  </Typography>
-                  <Chip 
-                    label={viewUser.status === 'active' ? 'Active' : viewUser.status === 'disabled' ? 'Disabled' : 'Banned'} 
-                    color={viewUser.status === 'active' ? 'success' : viewUser.status === 'disabled' ? 'error' : 'warning'}
-                    variant="outlined"
-                    size="small"
-                    sx={{ mb: 2 }}
-                  />
-                  
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Created At
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {viewUser.createdAt ? new Date(viewUser.createdAt).toLocaleString('en-IN', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      second: '2-digit'
-                    }) : 'N/A'}
-                  </Typography>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                      Game ID
+                    </Typography>
+                    <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500 }}>
+                      {viewUser.gameId}
+                    </Typography>
+                  </Box>
                 </Box>
               </Box>
-              
-              {viewUser.assignedAgent && (
-                <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                    Assigned Agent
-                  </Typography>
-                  <Typography variant="body1">
-                    {viewUser.assignedAgent}
-                  </Typography>
-                </Box>
-              )}
-              
-              {/* Payment Methods Section */}
-              <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Payment Methods
+
+              <Divider sx={{ my: 3 }} />
+
+              {/* Account Information Section */}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
+                  Account Information
                 </Typography>
-                {viewUser.paymentMethods && viewUser.paymentMethods.length > 0 ? (
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    {viewUser.paymentMethods.map((payment) => (
-                      <Box 
-                        key={payment._id} 
-                        sx={{ 
-                          p: 2, 
-                          border: 1, 
-                          borderColor: payment.isDefault ? 'primary.main' : 'divider',
-                          borderRadius: 1,
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                      Role
+                    </Typography>
+                    <Box sx={{ mt: 0.5 }}>
+                      <Chip 
+                        label={viewUser.role?.toUpperCase() || 'N/A'} 
+                        color={viewUser.role === 'admin' ? 'error' : viewUser.role === 'agent' ? 'warning' : 'primary'}
+                        variant="outlined"
+                        size="small"
+                        sx={{ fontWeight: 'bold', textTransform: 'uppercase' }}
+                      />
+                    </Box>
+                  </Box>
+                  
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                      Status
+                    </Typography>
+                    <Box sx={{ mt: 0.5 }}>
+                      <Chip 
+                        label={viewUser.status === 'active' ? 'Active' : viewUser.status === 'disabled' ? 'Disabled' : 'Banned'} 
+                        color={viewUser.status === 'active' ? 'success' : viewUser.status === 'disabled' ? 'error' : 'warning'}
+                        variant="outlined"
+                        size="small"
+                      />
+                    </Box>
+                  </Box>
+                  
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                      Created At
+                    </Typography>
+                    <Typography variant="body2" sx={{ mt: 0.5 }}>
+                      {viewUser.createdAt ? new Date(viewUser.createdAt).toLocaleString('en-IN', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                      }) : 'N/A'}
+                    </Typography>
+                  </Box>
+                  
+                  {viewUser.assignedAgent && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                        Assigned Agent
+                      </Typography>
+                      <Typography variant="body2" sx={{ mt: 0.5, fontWeight: 500 }}>
+                        {viewUser.assignedAgent}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Payment Methods Section */}
+              {viewUser.paymentMethods && viewUser.paymentMethods.length > 0 && (
+                <>
+                  <Divider sx={{ my: 3 }} />
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
+                      Payment Methods
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      {viewUser.paymentMethods.map((payment) => (
+                        <Box 
+                          key={payment._id} 
+                          sx={{ 
+                            p: 2, 
+                            border: 1, 
+                            borderColor: payment.isDefault ? 'primary.main' : 'divider',
+                            borderRadius: 1,
+                            backgroundColor: payment.isDefault ? 'action.hover' : 'transparent',
+                          }}
+                        >
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                            <Typography variant="body2" fontWeight="bold">
+                              {payment.name}
+                            </Typography>
+                            {payment.isDefault && (
+                              <Chip 
+                                label="Default" 
+                                color="primary" 
+                                size="small" 
+                                variant="outlined"
+                              />
+                            )}
+                          </Box>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
+                            {payment.upiId}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                </>
+              )}
+
+              <Divider sx={{ my: 3 }} />
+
+              {/* Actions Section */}
+              <Box>
+                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
+                  Actions
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  <Tooltip title="Edit User">
+                    <Button 
+                      variant="outlined" 
+                      size="small" 
+                      startIcon={<EditIcon />}
+                      onClick={() => {
+                        setViewUserOpen(false);
+                        handleEdit(viewUser);
+                      }}
+                    >
+                      Edit
+                    </Button>
+                  </Tooltip>
+                  
+                  {(currentUser?.role === 'admin' || (currentUser?.role === 'agent' && viewUser?.assignedAgent === currentUser?.id)) && (
+                    <Tooltip title="Change Password">
+                      <Button 
+                        variant="outlined" 
+                        size="small" 
+                        startIcon={<LockIcon />}
+                        onClick={() => {
+                          setViewUserOpen(false);
+                          handlePasswordChange(viewUser);
                         }}
                       >
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                          <Typography variant="body2" fontWeight="bold">
-                            {payment.name}
-                          </Typography>
-                          {payment.isDefault && (
-                            <Chip 
-                              label="Default" 
-                              color="primary" 
-                              size="small" 
-                              variant="outlined"
-                            />
-                          )}
-                        </Box>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
-                          {payment.upiId}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    No payment methods added
-                  </Typography>
-                )}
+                        Change Password
+                      </Button>
+                    </Tooltip>
+                  )}
+
+                  {viewUser.status === 'active' ? (
+                    <Tooltip title="Ban User">
+                      <Button 
+                        variant="outlined" 
+                        color="warning"
+                        size="small" 
+                        startIcon={<GavelIcon />}
+                        onClick={() => {
+                          setViewUserOpen(false);
+                          banUser(viewUser._id);
+                        }}
+                      >
+                        Ban
+                      </Button>
+                    </Tooltip>
+                  ) : viewUser.status === 'disabled' ? (
+                    <>
+                      <Tooltip title="Activate User">
+                        <Button 
+                          variant="outlined" 
+                          color="success"
+                          size="small" 
+                          startIcon={<CheckCircleIcon />}
+                          onClick={() => {
+                            setViewUserOpen(false);
+                            activateUser(viewUser._id);
+                          }}
+                        >
+                          Activate
+                        </Button>
+                      </Tooltip>
+                      <Tooltip title="Ban User">
+                        <Button 
+                          variant="outlined" 
+                          color="warning"
+                          size="small" 
+                          startIcon={<GavelIcon />}
+                          onClick={() => {
+                            setViewUserOpen(false);
+                            banUser(viewUser._id);
+                          }}
+                        >
+                          Ban
+                        </Button>
+                      </Tooltip>
+                    </>
+                  ) : viewUser.status === 'banned' ? (
+                    <Tooltip title="Activate User">
+                      <Button 
+                        variant="outlined" 
+                        color="success"
+                        size="small" 
+                        startIcon={<CheckCircleIcon />}
+                        onClick={() => {
+                          setViewUserOpen(false);
+                          activateUser(viewUser._id);
+                        }}
+                      >
+                        Activate
+                      </Button>
+                    </Tooltip>
+                  ) : null}
+
+                  <Tooltip title="Delete User">
+                    <Button 
+                      variant="outlined" 
+                      color="error"
+                      size="small" 
+                      startIcon={<DeleteIcon />}
+                      onClick={() => {
+                        setViewUserOpen(false);
+                        handleDelete(viewUser._id);
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </Tooltip>
+                </Box>
               </Box>
             </Box>
           )}

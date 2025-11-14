@@ -17,6 +17,7 @@ import ImagesPage from './pages/ImagesPage';
 import CommissionPage from './pages/CommissionPage';
 import CardsPage from './pages/CardsPage';
 import AppSettingsPage from './pages/AppSettingsPage';
+import GameRulesPage from './pages/GameRulesPage';
 
 function LoadingScreen() {
   return (
@@ -87,6 +88,7 @@ function AppRoutes() {
       <Route path="/images" element={<ProtectedRoute><DashboardLayout><ImagesPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/commission" element={<ProtectedRoute><DashboardLayout><CommissionPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/app-settings" element={<ProtectedRoute><DashboardLayout><AppSettingsPage /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/game-rules" element={<ProtectedRoute><DashboardLayout><GameRulesPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

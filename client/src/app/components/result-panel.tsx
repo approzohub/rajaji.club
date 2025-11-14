@@ -9,7 +9,17 @@ import { formatTimeForDisplay } from "../../lib/timezone";
 import { useAlert } from "../hooks";
 import { AlertModal } from ".";
 
-export function ResultPanel({ isRmPlayNow = false, onLoginClick }: { isRmPlayNow?: boolean; onLoginClick?: () => void }) {
+export function ResultPanel({ 
+  isRmPlayNow = false, 
+  onLoginClick,
+  showOnlyResult = false,
+  showOnlyTimer = false
+}: { 
+  isRmPlayNow?: boolean; 
+  onLoginClick?: () => void;
+  showOnlyResult?: boolean;
+  showOnlyTimer?: boolean;
+}) {
   const router = useRouter();
   const { isLoggedIn } = useAuthStore();
   const { alert, showError, closeAlert } = useAlert();
@@ -141,9 +151,10 @@ export function ResultPanel({ isRmPlayNow = false, onLoginClick }: { isRmPlayNow
   return (
     <>
       {/* Desktop View - Hidden on mobile */}
-      <aside className="hidden md:block w-full lg:w-[340px] mt-2 flex flex-col gap-6 rounded-2xl p-0" aria-label="Result Panel">
-        {/* Result Card */}
-        <div className="bg-white rounded-lg shadow-lg flex items-center justify-between px-6 mb-4 " style={{ minHeight: 81 }}>
+      <aside className={`hidden md:block w-full ${showOnlyResult || showOnlyTimer ? 'lg:w-full' : 'lg:w-[340px]'} mt-2 flex flex-col gap-2 rounded-2xl p-0`} aria-label="Result Panel">
+        {/* Result Card - Show if not showOnlyTimer */}
+        {!showOnlyTimer && (
+        <div className="bg-white rounded-lg shadow-lg flex items-center justify-between px-6 mb-7" style={{ minHeight: 81 }}>
           <div className="flex flex-col items-start justify-center gap-0.5">
             <span
               className="text-black font-normal"
@@ -227,10 +238,12 @@ export function ResultPanel({ isRmPlayNow = false, onLoginClick }: { isRmPlayNow
             )}
           </div>
         </div>
+        )}
 
-        {/* Game Timer with Connection Status */}
+        {/* Game Timer with Connection Status - Show if not showOnlyResult */}
+        {!showOnlyResult && (
         <div className="relative w-full">
-          <div className={`rounded-lg flex flex-col items-center justify-center  px-10 p-2 w-full relative overflow-visible ${timerData.isBreak ? 'bg-orange-500' : 'bg-[#16c25f]'}`}>
+          <div className={`rounded-lg flex flex-col items-center justify-center px-10 p-2 w-full relative overflow-visible ${timerData.isBreak ? 'bg-orange-500' : 'bg-[#16c25f]'}`} style={{ minHeight: 81 }}>
             <div className="w-full flex items-center justify-center relative">
               <span
                 className="text-white font-bold text-center mx-auto"
@@ -244,7 +257,7 @@ export function ResultPanel({ isRmPlayNow = false, onLoginClick }: { isRmPlayNow
                   marginTop: 10,
                 }}
               >
-                {timerData.isBreak ? 'Game start in' : 'Game Timer'}
+                {timerData.isBreak ? 'Starting In' : 'Game Timer'}
               </span>
 
             </div>
@@ -265,9 +278,10 @@ export function ResultPanel({ isRmPlayNow = false, onLoginClick }: { isRmPlayNow
             </span>
           </div>
         </div>
+        )}
 
-        {/* Play Now Button - Only show when logged in */}
-        {!isRmPlayNow && (
+        {/* Play Now Button - Only show when logged in and not in split view */}
+        {!isRmPlayNow && !showOnlyResult && !showOnlyTimer && (
           <button
             style={{
               backgroundColor: '#FFCD01',
@@ -296,51 +310,51 @@ export function ResultPanel({ isRmPlayNow = false, onLoginClick }: { isRmPlayNow
       </aside>
 
       {/* Mobile View - Hidden on desktop */}
-      <aside className="md:hidden w-full flex flex-col gap-3 mt-2" aria-label="Mobile Result Panel">
+      <aside className={`md:hidden w-full ${showOnlyResult || showOnlyTimer ? '' : 'flex flex-col gap-3'} ${showOnlyResult || showOnlyTimer ? '' : 'mt-2'}`} aria-label="Mobile Result Panel">
         {/* Result Card - Mobile */}
-        <div className="bg-white rounded-lg shadow-lg flex items-center justify-between px-4 w-full" style={{ minHeight: 60 }}>
+        {!showOnlyTimer && (
+        <div className={`bg-white ${showOnlyResult ? '' : 'rounded-lg'} shadow-lg flex items-center justify-between ${showOnlyResult ? 'px-3 py-2' : 'px-4'} w-full`} style={{ minHeight: showOnlyResult ? 60 : 60 }}>
           <div className="flex flex-col items-start justify-center">
             <span
-              className="text-black font-semibold text-[22px] leading-[10px] tracking-[0%]"
+              className={`text-black font-semibold ${showOnlyResult ? 'text-[14px]' : 'text-[22px]'} leading-tight tracking-[0%]`}
               style={{
                 fontFamily: 'Poppins',
                 fontWeight: 600,
                 fontStyle: 'SemiBold',
               }}
             >
-              Result: {isLoading ? "Loading..." : (hasResult ? formatTimeForDisplay(lastResult.time!) : "N/A")}
+              {showOnlyResult ? 'Result' : `Result: ${isLoading ? "Loading..." : (hasResult ? formatTimeForDisplay(lastResult.time!) : "N/A")}`}
             </span>
+            {showOnlyResult && (
+              <span
+                className="text-gray-500 text-[12px] leading-tight mt-0.5"
+                style={{
+                  fontFamily: 'Poppins',
+                  fontWeight: 400,
+                }}
+              >
+                {isLoading ? "Loading..." : (hasResult ? formatTimeForDisplay(lastResult.time!) : "N/A")}
+              </span>
+            )}
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5">
             {hasResult ? (
               <>
-                <div
-                  className="flex items-center gap-1"
+                <span
+                  className={`text-black font-normal ${showOnlyResult ? 'text-[28px]' : 'text-[48px]'} leading-none tracking-[0%]`}
                   style={{
-                    width: '73.33349609375px',
-                    height: '43px',
-                    transform: 'rotate(0deg)',
-                    opacity: 1,
-                    top: '86px',
-                    left: '279px',
+                    fontFamily: 'Poppins',
+                    fontWeight: 400,
+                    fontStyle: 'Regular',
                   }}
                 >
-                  <span
-                    className="text-black font-normal text-[48px] leading-[10px] tracking-[0%]"
-                    style={{
-                      fontFamily: 'Poppins',
-                      fontWeight: 400,
-                      fontStyle: 'Regular',
-                    }}
-                  >
-                    {cardData?.value}
-                  </span>
-                  <SuitIcon suit={cardData?.suit || "♠"} size={48} />
-                </div>
+                  {cardData?.value}
+                </span>
+                <SuitIcon suit={cardData?.suit || "♠"} size={showOnlyResult ? 28 : 48} />
               </>
             ) : (
               <span
-                className="text-gray-400 font-normal text-[22px] leading-[10px] tracking-[0%]"
+                className={`text-gray-400 font-normal ${showOnlyResult ? 'text-[14px]' : 'text-[22px]'} leading-tight tracking-[0%]`}
                 style={{
                   fontFamily: 'Poppins',
                   fontWeight: 400,
@@ -352,21 +366,23 @@ export function ResultPanel({ isRmPlayNow = false, onLoginClick }: { isRmPlayNow
             )}
           </div>
         </div>
+        )}
 
         {/* Game Timer - Mobile */}
-        <div className={`rounded-lg flex items-center justify-between px-4 py-6 w-full ${timerData.isBreak ? 'bg-orange-500' : 'bg-[#16c25f]'}`} style={{ minHeight: 60 }}>
+        {!showOnlyResult && (
+        <div className={`${showOnlyTimer ? '' : 'rounded-lg'} flex items-center justify-between ${showOnlyTimer ? 'px-3 py-2' : 'px-4 py-6'} w-full ${timerData.isBreak ? 'bg-orange-500' : 'bg-[#16c25f]'}`} style={{ minHeight: showOnlyTimer ? 60 : 60 }}>
           <span
-            className="text-white font-normal text-[22px] leading-[10px] tracking-[0%]"
+            className={`text-white font-normal ${showOnlyTimer ? 'text-[12px]' : 'text-[22px]'} leading-tight tracking-[0%]`}
             style={{
               fontFamily: 'Poppins',
               fontWeight: 400,
               fontStyle: 'Regular',
             }}
           >
-            {timerData.isBreak ? 'Game start in' : 'Game Timer'}
+            {timerData.isBreak ? 'Starting In' : 'Game Timer'}
           </span>
           <span
-            className="text-white font-normal text-[32px] leading-[10px] tracking-[0%]"
+            className={`text-white font-normal ${showOnlyTimer ? 'text-[20px]' : 'text-[32px]'} leading-tight tracking-[0%]`}
             style={{
               fontFamily: 'Poppins',
               fontWeight: 400,
@@ -376,6 +392,7 @@ export function ResultPanel({ isRmPlayNow = false, onLoginClick }: { isRmPlayNow
             {formatTime(timerData.currentTime)}
           </span>
         </div>
+        )}
 
         {/* Play Now Button - Mobile - Hidden since we have sticky button */}
         {/* {!isRmPlayNow && (

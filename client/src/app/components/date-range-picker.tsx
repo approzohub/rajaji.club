@@ -201,17 +201,19 @@ export function DateRangePicker({ isOpen, onClose, onDateRangeSelect }: DateRang
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div 
         ref={pickerRef}
-        className="bg-white rounded-lg shadow-lg p-6 w-[95vw] max-w-sm mx-auto"
+        className="bg-white rounded-lg shadow-lg p-4 sm:p-6 w-full max-w-sm mx-auto"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-black">Select Date Range</h3>
+          <h3 className="text-base sm:text-lg font-bold text-black whitespace-nowrap" style={{ fontFamily: 'Poppins, sans-serif' }}>
+            Select Date Range
+          </h3>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 cursor-pointer"
+            className="text-gray-500 hover:text-gray-700 cursor-pointer text-xl sm:text-2xl flex-shrink-0 ml-2"
           >
             ✕
           </button>
@@ -223,17 +225,18 @@ export function DateRangePicker({ isOpen, onClose, onDateRangeSelect }: DateRang
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={goToPreviousMonth}
-            className="p-2 hover:bg-gray-100 rounded cursor-pointer"
+            className="p-2 hover:bg-gray-100 rounded cursor-pointer flex-shrink-0"
           >
             ‹
           </button>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 justify-center min-w-0">
             {/* Month Selector */}
-            <div className="relative month-picker-dropdown">
+            <div className="relative month-picker-dropdown flex-shrink-0">
               <button
                 onClick={() => setShowMonthPicker(!showMonthPicker)}
-                className="px-3 py-1 text-lg font-semibold text-black hover:bg-gray-100 rounded cursor-pointer"
+                className="px-2 sm:px-3 py-1 text-sm sm:text-lg font-semibold text-black hover:bg-gray-100 rounded cursor-pointer whitespace-nowrap"
+                style={{ fontFamily: 'Poppins, sans-serif' }}
               >
                 {monthNames[currentMonth.getMonth()]}
               </button>
@@ -261,10 +264,11 @@ export function DateRangePicker({ isOpen, onClose, onDateRangeSelect }: DateRang
             </div>
 
             {/* Year Selector */}
-            <div className="relative year-picker-dropdown">
+            <div className="relative year-picker-dropdown flex-shrink-0">
               <button
                 onClick={() => setShowYearPicker(!showYearPicker)}
-                className="px-3 py-1 text-lg font-semibold text-black hover:bg-gray-100 rounded cursor-pointer"
+                className="px-2 sm:px-3 py-1 text-sm sm:text-lg font-semibold text-black hover:bg-gray-100 rounded cursor-pointer whitespace-nowrap"
+                style={{ fontFamily: 'Poppins, sans-serif' }}
               >
                 {currentMonth.getFullYear()}
               </button>
@@ -295,7 +299,7 @@ export function DateRangePicker({ isOpen, onClose, onDateRangeSelect }: DateRang
           <button
             onClick={goToNextMonth}
             disabled={isMonthInFuture(currentMonth.getFullYear(), currentMonth.getMonth() + 1)}
-            className={`p-2 rounded cursor-pointer ${
+            className={`p-2 rounded cursor-pointer flex-shrink-0 ${
               isMonthInFuture(currentMonth.getFullYear(), currentMonth.getMonth() + 1)
                 ? 'text-gray-400 cursor-not-allowed'
                 : 'hover:bg-gray-100'
@@ -309,7 +313,7 @@ export function DateRangePicker({ isOpen, onClose, onDateRangeSelect }: DateRang
         <div className="grid grid-cols-7 gap-1 mb-4">
           {/* Day headers */}
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day} className="text-center text-sm font-medium text-gray-600 py-2">
+            <div key={day} className="text-center text-xs sm:text-sm font-medium text-gray-600 py-1 sm:py-2">
               {day}
             </div>
           ))}
@@ -335,7 +339,7 @@ export function DateRangePicker({ isOpen, onClose, onDateRangeSelect }: DateRang
                 onMouseLeave={() => setHoverDate(null)}
                 disabled={isFuture}
                 className={`
-                  h-10 w-full rounded text-sm font-medium transition-colors relative cursor-pointer
+                  h-8 sm:h-10 w-full rounded text-xs sm:text-sm font-medium transition-colors relative cursor-pointer
                   ${isSelected || isEndSelected 
                     ? 'bg-blue-600 text-white font-bold' 
                     : isInRange || isInHoverRange
@@ -361,14 +365,16 @@ export function DateRangePicker({ isOpen, onClose, onDateRangeSelect }: DateRang
         <div className="flex gap-2">
           <button
             onClick={handleCancel}
-            className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors cursor-pointer"
+            className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors cursor-pointer"
+            style={{ fontFamily: 'Poppins, sans-serif' }}
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
             disabled={!startDate || !endDate}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            style={{ fontFamily: 'Poppins, sans-serif' }}
           >
             Confirm
           </button>

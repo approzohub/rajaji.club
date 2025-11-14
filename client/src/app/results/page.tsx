@@ -279,17 +279,20 @@ export default function ResultsPage() {
   };
 
   const handleResetFilter = () => {
-    setCurrentDateRange(null);
-    // Reset to current month
-    // const now = new Date();
-    // const currentYear = now.getFullYear();
-    // const currentMonth = now.getMonth() + 1;
+    // Reset to current month (1st to current date)
+    const now = new Date();
     
-    // const startDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
-    // const lastDay = new Date(currentYear, currentMonth, 0).getDate();
-    // const endDate = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${lastDay}`;
+    // Convert to IST timezone for proper date calculation
+    const istNow = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
     
-    fetchResultsByDateRange();
+    // Format dates as YYYY-MM-DD for API call using IST dates
+    const startDate = `${istNow.getFullYear()}-${String(istNow.getMonth() + 1).padStart(2, '0')}-01`; // 1st of current month
+    const endDate = `${istNow.getFullYear()}-${String(istNow.getMonth() + 1).padStart(2, '0')}-${String(istNow.getDate()).padStart(2, '0')}`; // Current date
+    
+    console.log('Resetting to current month:', { startDate, endDate });
+    
+    setCurrentDateRange({ start: startDate, end: endDate });
+    // fetchResultsByDateRange will be called automatically via useEffect when currentDateRange changes
   };
 
   async function handleLoginSubmit(gameId: string, password: string) {
@@ -326,13 +329,12 @@ export default function ResultsPage() {
 
 
           {/* Title and Filter Section - Full Width */}
-          <div className="mb-6 flex justify-between items-center">
+          <div className="mb-4 sm:mb-6 flex justify-between items-center flex-wrap gap-2">
             <h1
-              className="text-white font-bold text-2xl"
+              className="text-white font-bold text-xl sm:text-2xl"
               style={{
                 fontFamily: 'Poppins, sans-serif',
                 fontWeight: 700,
-                fontSize: '20px',
                 lineHeight: '20px',
                 fontStyle: "inherit",
               }}
@@ -356,36 +358,35 @@ export default function ResultsPage() {
 
 
           {/* Date Range Picker - Full Width */}
-          <div className="mb-4 flex gap-2 items-center">
+          <div className="mb-4 flex flex-wrap gap-2 items-center">
             <button
               onClick={() => setShowDatePicker(true)}
-              className="bg-[#222B44] hover:bg-[#2a3448] text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
+              className="bg-[#222B44] hover:bg-[#2a3448] text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-colors cursor-pointer text-xs sm:text-sm whitespace-nowrap"
               style={{
                 fontFamily: 'Poppins, sans-serif',
                 fontWeight: 500,
-                fontSize: '14px',
                 lineHeight: '20px',
               }}
             >
-              📅 {currentDateRange ? 'Change Date Range' : 'Select Date Range'}
+              📅 <span className="hidden sm:inline">{currentDateRange ? 'Change Date Range' : 'Select Date Range'}</span>
+              <span className="sm:hidden">Date</span>
             </button>
             
             {currentDateRange && (
               <>
                 <button
                   onClick={handleResetFilter}
-                  className="bg-[#222B44] hover:bg-[#2a3448] text-white font-medium py-2 px-4 rounded-lg transition-colors cursor-pointer"
+                  className="bg-[#222B44] hover:bg-[#2a3448] text-white font-medium py-2 px-3 sm:px-4 rounded-lg transition-colors cursor-pointer text-xs sm:text-sm whitespace-nowrap"
                   style={{
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 500,
-                    fontSize: '14px',
                     lineHeight: '20px',
                   }}
                 >
                   🔄 Reset
                 </button>
                 
-                <span className="text-white text-sm px-3 py-2 bg-[#222B44] rounded-lg">
+                <span className="text-white text-xs sm:text-sm px-2 sm:px-3 py-2 bg-[#222B44] rounded-lg whitespace-nowrap">
                   {formatDateForDisplay(currentDateRange.start)} to {formatDateForDisplay(currentDateRange.end)}
                 </span>
               </>
@@ -398,27 +399,62 @@ export default function ResultsPage() {
           />
 
           {/* Chart Table and Result Panel - Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
 
             {/* Left Column - Result Chart Table (3/4 width) */}
-            <div className="lg:col-span-3">
-              <div className="w-full bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200">
+            <div className="lg:col-span-3 w-full">
+              <div className="w-full bg-white rounded-lg sm:rounded-xl shadow-2xl overflow-hidden border border-gray-200">
                 {isLoading ? (
                   <div className="h-96 flex items-center justify-center">
                     <div className="text-gray-600 text-lg font-medium">Loading results...</div>
                   </div>
+                ) : chartData.length === 0 || dateColumns.length === 0 ? (
+                  <div className="h-96 md:h-[32rem] xl:h-[40rem] flex flex-col items-center justify-center p-8">
+                    <div className="text-center">
+                      <div className="text-6xl mb-4">📅</div>
+                      <h3 className="text-xl font-semibold text-gray-800 mb-2" style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 600,
+                      }}>
+                        No Results Found
+                      </h3>
+                      <p className="text-gray-600 mb-4" style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 400,
+                        fontSize: '14px',
+                      }}>
+                        {currentDateRange ? (
+                          <>
+                            No game results available for the selected date range
+                            <br />
+                            <span className="text-gray-500 text-sm mt-2 block">
+                              {formatDateForDisplay(currentDateRange.start)} to {formatDateForDisplay(currentDateRange.end)}
+                            </span>
+                          </>
+                        ) : (
+                          'No game results available for the selected period'
+                        )}
+                      </p>
+                      <p className="text-gray-500 text-sm" style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 400,
+                      }}>
+                        Please try selecting a different date range
+                      </p>
+                    </div>
+                  </div>
                 ) : (
                   <div ref={scrollableContainerRef} className="h-96 md:h-[32rem] xl:h-[40rem] overflow-auto">
-                    <table className="min-w-full text-sm table">
+                    <table className="min-w-full text-xs sm:text-sm table">
                       <thead className="sticky top-0 bg-[#222B44] z-10">
                         <tr>
-                          <th className="px-6 py-4 font-semibold text-white text-left border-r border-white border-b border-white sticky left-0 bg-[#222B44] text-white z-9">
+                          <th className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 font-semibold text-white text-left border-r border-white border-b border-white sticky left-0 bg-[#222B44] text-white z-9">
                             <span style={{
                               fontFamily: 'Poppins, sans-serif',
                               fontWeight: 600,
-                              fontSize: '14px',
+                              fontSize: '12px',
                               lineHeight: '1.5',
-                            }}>
+                            }} className="sm:text-sm">
                               Time
                             </span>
                           </th>
@@ -435,14 +471,15 @@ export default function ResultsPage() {
                             const isToday = date === todayFormatted;
                             
                             return (
-                              <th key={index} className="px-6 py-4 font-semibold text-white text-center border-r border-white border-b border-white">
+                              <th key={index} className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 font-semibold text-white text-center border-r border-white border-b border-white">
                                 <span style={{
                                   fontFamily: 'Poppins, sans-serif',
                                   fontWeight: 600,
-                                  fontSize: '14px',
+                                  fontSize: '12px',
                                   lineHeight: '1.5',
-                                }}>
-                                  {isToday ? "Today's Results" : date}
+                                  whiteSpace: 'nowrap',
+                                }} className="sm:text-sm">
+                                  {isToday ? "Today" : date}
                                 </span>
                               </th>
                             );
@@ -452,13 +489,13 @@ export default function ResultsPage() {
                       <tbody>
                         {chartData.map((row, rowIndex) => (
                           <tr key={rowIndex} className={rowIndex % 2 === 0 ? "bg-[#f8f9fa]" : "bg-white"}>
-                            <td className="px-6 py-4 font-medium text-white whitespace-nowrap border-r border-white border-b border-white bg-[#222B44] sticky left-0">
+                            <td className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 font-medium text-white whitespace-nowrap border-r border-white border-b border-white bg-[#222B44] sticky left-0">
                               <span style={{
                                 fontFamily: 'Poppins, sans-serif',
                                 fontWeight: 500,
-                                fontSize: '14px',
+                                fontSize: '12px',
                                 lineHeight: '1.5',
-                              }}>
+                              }} className="sm:text-sm">
                                 {row.time}
                               </span>
                             </td>
@@ -466,14 +503,14 @@ export default function ResultsPage() {
                             {row.results.map((result, resultIndex) => {
                               if (!result || result === 'N/A') {
                                 return (
-                                  <td key={resultIndex} className="px-6 py-4 text-center border-r border-white border-b border-white">
+                                  <td key={resultIndex} className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-center border-r border-white border-b border-white">
                                     <span style={{
                                       fontFamily: 'Poppins, sans-serif',
                                       fontWeight: 500,
-                                      fontSize: '14px',
+                                      fontSize: '12px',
                                       lineHeight: '1.5',
                                       color: '#6c757d'
-                                    }}>
+                                    }} className="sm:text-sm">
                                       N/A
                                     </span>
                                   </td>
@@ -482,14 +519,14 @@ export default function ResultsPage() {
 
                               if (!result || typeof result !== 'string') {
                                 return (
-                                  <td key={resultIndex} className="px-6 py-4 text-center border-r border-white border-b border-white">
+                                  <td key={resultIndex} className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-center border-r border-white border-b border-white">
                                     <span style={{
                                       fontFamily: 'Poppins, sans-serif',
                                       fontWeight: 500,
-                                      fontSize: '14px',
+                                      fontSize: '12px',
                                       lineHeight: '1.5',
                                       color: '#6c757d'
-                                    }}>
+                                    }} className="sm:text-sm">
                                       N/A
                                     </span>
                                   </td>
@@ -502,32 +539,32 @@ export default function ResultsPage() {
                                 const cardSuit = resultParts[1];
 
                                 return (
-                                  <td key={resultIndex} className="px-6 py-4 text-center border-r border-white border-b border-white">
-                                    <div className="flex items-center justify-center gap-1">
+                                  <td key={resultIndex} className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-center border-r border-white border-b border-white">
+                                    <div className="flex items-center justify-center gap-0.5 sm:gap-1">
                                       <span style={{
                                         fontFamily: 'Poppins, serif',
                                         fontWeight: 500,
-                                        fontSize: '14px',
+                                        fontSize: '12px',
                                         lineHeight: '1.5',
                                         color: '#000000'
-                                      }}>
+                                      }} className="sm:text-sm">
                                         {cardRank}
                                       </span>
-                                      <SuitIcon suit={cardSuit} size={22} />
+                                      <SuitIcon suit={cardSuit} size={18} />
                                     </div>
                                   </td>
                                 );
                               }
 
                               return (
-                                <td key={resultIndex} className="px-6 py-4 text-center border-r border-white border-b border-white">
+                                <td key={resultIndex} className="px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4 text-center border-r border-white border-b border-white">
                                   <span style={{
                                     fontFamily: 'Poppins, serif',
                                     fontWeight: 500,
-                                    fontSize: '14px',
+                                    fontSize: '12px',
                                     lineHeight: '1.5',
                                     color: '#6c757d'
-                                  }}>
+                                  }} className="sm:text-sm">
                                     {result}
                                   </span>
                                 </td>
@@ -554,45 +591,50 @@ export default function ResultsPage() {
       <Footer />
       <WhatsAppFab />
 
-      {/* Sticky Play Now Button for Mobile - Only show when logged in */}
-      {isLoggedIn && (
-        <div 
-          className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-[#0a0f1a] flex justify-center pointer-events-auto"
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 9999,
-            pointerEvents: 'auto',
-            WebkitTransform: 'translateZ(0)',
-            transform: 'translateZ(0)',
-          }}
-        >
-        <a
-          href={gameStatus === 'open' ? "/game" : "#"}
+      {/* Sticky Play Now/Timeout Button for Mobile - Always show */}
+      <div 
+        className="md:hidden fixed bottom-0 left-0 right-0 z-[9999] bg-[#0a0f1a] flex justify-center pointer-events-auto"
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+          pointerEvents: 'auto',
+          WebkitTransform: 'translateZ(0)',
+          transform: 'translateZ(0)',
+          minHeight: '60px',
+        }}
+      >
+        <button
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             if (gameStatus === 'open') {
-              console.log('Play now link clicked');
-              window.location.href = '/game';
+              if (isLoggedIn) {
+                console.log('Play now button clicked');
+                window.location.href = '/game';
+              } else {
+                setLoginOpen(true);
+              }
             }
           }}
           onTouchStart={(e) => {
             e.preventDefault();
-            console.log('Play now link touch start');
           }}
           onTouchEnd={(e) => {
             e.preventDefault();
-            console.log('Play now link touch end');
             if (gameStatus === 'open') {
-              window.location.href = '/game';
+              if (isLoggedIn) {
+                window.location.href = '/game';
+              } else {
+                setLoginOpen(true);
+              }
             }
           }}
           className={`w-full max-w-md py-4 shadow transition-colors pointer-events-auto touch-manipulation block text-center ${
-            gameStatus === 'open' 
-              ? 'bg-[#FFCD01] text-black cursor-pointer' 
+            gameStatus === 'open' || !isLoggedIn
+              ? 'bg-[#FFCD01] text-black cursor-pointer hover:bg-yellow-400' 
               : 'bg-[#FFCD01] text-black cursor-not-allowed'
           }`}
           style={{
@@ -610,14 +652,14 @@ export default function ResultsPage() {
             WebkitUserSelect: 'none',
             userSelect: 'none',
             touchAction: 'manipulation',
-            textDecoration: 'none',
-            display: 'block',
+            border: 'none',
+            outline: 'none',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
           }}
         >
-          {gameStatus === 'open' ? 'PLAY NOW' : 'TIME OUT'}
-        </a>
-        </div>
-      )}
+          {!isLoggedIn ? 'PLAY NOW' : (gameStatus === 'open' ? 'PLAY NOW' : 'TIME OUT')}
+        </button>
+      </div>
       <LoginModal 
         open={loginOpen} 
         onClose={() => { setLoginOpen(false); setLoginError(""); }} 

@@ -53,7 +53,7 @@ const router = Router();
  *       401:
  *         description: Unauthorized
  */
-router.get('/', jwtAuth, requireRole('user'), getUserPayments);
+router.get('/', jwtAuth, requireRole('user', 'agent', 'admin'), getUserPayments);
 
 /**
  * @swagger
@@ -93,7 +93,7 @@ router.get('/', jwtAuth, requireRole('user'), getUserPayments);
  *       401:
  *         description: Unauthorized
  */
-router.post('/', jwtAuth, requireRole('user'), addPayment);
+router.post('/', jwtAuth, requireRole('user', 'agent', 'admin'), addPayment);
 
 /**
  * @swagger
@@ -135,7 +135,7 @@ router.post('/', jwtAuth, requireRole('user'), addPayment);
  *       404:
  *         description: Payment method not found
  */
-router.put('/:paymentId', jwtAuth, requireRole('user'), updatePayment);
+router.put('/:paymentId', jwtAuth, requireRole('user', 'agent', 'admin'), updatePayment);
 
 /**
  * @swagger
@@ -159,7 +159,7 @@ router.put('/:paymentId', jwtAuth, requireRole('user'), updatePayment);
  *       404:
  *         description: Payment method not found
  */
-router.delete('/:paymentId', jwtAuth, requireRole('user'), deletePayment);
+router.delete('/:paymentId', jwtAuth, requireRole('user', 'agent', 'admin'), deletePayment);
 
 /**
  * @swagger
@@ -183,6 +183,6 @@ router.delete('/:paymentId', jwtAuth, requireRole('user'), deletePayment);
  *       404:
  *         description: Payment method not found
  */
-router.post('/:paymentId/default', jwtAuth, requireRole('user'), setDefaultPayment);
+router.post('/:paymentId/default', jwtAuth, requireRole('user', 'agent', 'admin'), setDefaultPayment);
 
 export default router; 

@@ -16,6 +16,7 @@ import commissionRoutes from './routes/commission.routes';
 import paymentRoutes from './routes/payment.routes';
 import appSettingsRoutes from './routes/app-settings.routes';
 import imagesRoutes from './routes/images.routes';
+import gameRulesRoutes from './routes/game-rules.routes';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 
@@ -112,6 +113,7 @@ app.use('/api/commission', commissionRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/app-settings', appSettingsRoutes);
 app.use('/api/images', imagesRoutes);
+app.use('/api/game-rules', gameRulesRoutes);
 
 // Serve uploaded images statically
 app.use('/uploads', express.static('uploads'));

@@ -16,7 +16,7 @@
     "pm2:monit": "pm2 monit",
     "pm2:reload": "pm2 reload admin-dashboard",
     "start": "npm run build && pm2 start ecosystem.config.cjs",
-    "serve": "npx serve dist -p 3000"
+    "serve": "npx serve dist -p 3000 --single"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
