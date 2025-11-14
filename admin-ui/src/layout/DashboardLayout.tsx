@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AppBar, Toolbar, Typography, IconButton, Drawer, List, ListItem, ListItemIcon, ListItemText, ListItemButton, Box, CssBaseline, Divider, Chip, Avatar, Menu, MenuItem, ListItemAvatar, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, TextField, Button, Alert } from '@mui/material';
-import { Dashboard, People, AccountBalanceWallet, SportsEsports, Menu as MenuIcon, Logout, AccountCircle, Percent, Casino, Settings, PhotoLibrary, MoneyOff, Lock, ChevronLeft, ChevronRight } from '@mui/icons-material';
+import { Dashboard, People, AccountBalanceWallet, SportsEsports, Menu as MenuIcon, Logout, AccountCircle, Percent, Casino, Settings, PhotoLibrary, MoneyOff, Lock, ChevronLeft, ChevronRight, Rule } from '@mui/icons-material';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { useGetMyWalletQuery } from '../api/walletApi';
@@ -37,6 +37,7 @@ const navItems = [
   { label: 'Images', icon: <PhotoLibrary />, path: '/images', adminOnly: true },
   { label: 'Commission', icon: <Percent />, path: '/commission', adminOnly: true },
   { label: 'App Settings', icon: <Settings />, path: '/app-settings', adminOnly: true },
+  { label: 'Game Rules', icon: <Rule />, path: '/game-rules', adminOnly: true },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

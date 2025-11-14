@@ -291,6 +291,11 @@ class ApiClient {
     return this.request(endpoint);
   }
 
+  // Game Rules API
+  async getGameRules(): Promise<ApiResponse<{ _id?: string; text: string; updatedAt?: string; createdAt?: string }>> {
+    return this.request('/game-rules', { skipAuth: true });
+  }
+
   // Results Chart API - New endpoint for results page
   async getResultsChart(page?: number, limit?: number): Promise<ApiResponse<{
     results: Array<{

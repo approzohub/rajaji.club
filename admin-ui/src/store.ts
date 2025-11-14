@@ -13,6 +13,7 @@ import { dashboardApi } from './api/dashboardApi';
 import { commissionApi } from './api/commissionApi';
 import { appSettingsApi } from './api/appSettingsApi';
 import { imagesApi } from './api/imagesApi';
+import { gameRulesApi } from './api/gameRulesApi';
 
 export const store = configureStore({
   reducer: {
@@ -29,6 +30,7 @@ export const store = configureStore({
     [commissionApi.reducerPath]: commissionApi.reducer,
     [appSettingsApi.reducerPath]: appSettingsApi.reducer,
     [imagesApi.reducerPath]: imagesApi.reducer,
+    [gameRulesApi.reducerPath]: gameRulesApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -44,7 +46,8 @@ export const store = configureStore({
       dashboardApi.middleware,
       commissionApi.middleware,
       appSettingsApi.middleware,
-      imagesApi.middleware
+      imagesApi.middleware,
+      gameRulesApi.middleware
     ),
 });
 
