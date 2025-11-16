@@ -840,8 +840,7 @@ export async function getResultsByDateRange(req: Request, res: Response) {
 
     const results = await Result.find(queryFilter)
       .sort({ resultDeclaredAt: -1 }) // Sort by time descending (most recent first)
-      .select('winningCard resultDeclaredAt gameStartTime')
-      .limit(100);
+      .select('winningCard resultDeclaredAt gameStartTime');
 
     // Format results for frontend
     const formattedResults = results.map(result => {
