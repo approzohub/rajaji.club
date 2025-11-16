@@ -61,12 +61,29 @@ export const gamesApi = createApi({
   tagTypes: ['Game', 'Card'],
   endpoints: (builder) => ({
     // Game Management
-    getGames: builder.query<Game[], void>({
-      query: () => 'games',
-      providesTags: ['Game'],
-    }),
-    getGamesByStatus: builder.query<Game[], string>({
-      query: (status) => `games?status=${status}`,
+    getGames: builder.query<{
+      games: Game[];
+      pagination: {
+        currentPage: number;
+        totalPages: number;
+        totalResults: number;
+        pageSize: number;
+      };
+      counts: {
+        totalGames: number;
+        openGames: number;
+        waitingResultGames: number;
+        declaredGames: number;
+      };
+    }, { status?: string; page?: number; limit?: number } | void>({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.status) searchParams.set('status', params.status);
+        if (params?.page) searchParams.set('page', String(params.page));
+        if (params?.limit) searchParams.set('limit', String(params.limit));
+        const qs = searchParams.toString();
+        return `games${qs ? `?${qs}` : ''}`;
+      },
       providesTags: ['Game'],
     }),
     getGame: builder.query<Game, string>({
@@ -265,7 +282,6 @@ export const gamesApi = createApi({
 
 export const {
   useGetGamesQuery,
-  useGetGamesByStatusQuery,
   useGetGameQuery,
   useGetCardsQuery,
   useGetCardsByTypeQuery,

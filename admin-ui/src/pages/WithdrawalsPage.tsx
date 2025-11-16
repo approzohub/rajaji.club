@@ -7,7 +7,17 @@ import { useGetUsersQuery } from '../api/usersApi';
 import { useState, useMemo } from 'react';
 
 export default function WithdrawalsPage() {
-  const { data: withdrawals = [], isLoading, error } = useGetWithdrawalsQuery();
+  const [paginationModel, setPaginationModel] = useState<{ page: number; pageSize: number }>({
+    page: 0,
+    pageSize: 10,
+  });
+
+  const { data, isLoading, error } = useGetWithdrawalsQuery({
+    page: paginationModel.page + 1,
+    limit: paginationModel.pageSize,
+  });
+
+  const withdrawals = data?.withdrawals ?? [];
   const { data: users = [], isLoading: isLoadingUsers } = useGetUsersQuery();
   
   // Temporary debug to check data structure
@@ -401,12 +411,12 @@ export default function WithdrawalsPage() {
           <Typography variant="h5" sx={{ fontWeight: 700 }}>Withdrawal Requests</Typography>
           <Box display="flex" gap={1} alignItems="center" flexWrap="wrap">
           <Chip 
-            label={`Total: ${(withdrawals || []).length}`} 
+            label={`Total: ${data?.counts.total ?? 0}`} 
             color="primary" 
             variant="outlined"
           />
           <Chip 
-            label={`Pending: ${(withdrawals || []).filter(w => w.status?.toLowerCase() === 'pending').length}`} 
+            label={`Pending: ${data?.counts.pending ?? 0}`} 
             color="warning" 
             variant="outlined"
           />
@@ -482,34 +492,38 @@ export default function WithdrawalsPage() {
         <Alert severity="error">
           {(error as unknown as { data?: { error?: string } }).data?.error || 'Failed to load withdrawals'}
         </Alert>
-            ) : (
+      ) : (
         <Box sx={{ width: '100%', overflowX: 'auto' }}>
-        <DataGrid
+          <DataGrid
             rows={filteredRows}
-          columns={columns}
-          getRowId={(row) => row._id || Math.random().toString()}
-          autoHeight
-          initialState={{ 
-            pagination: { paginationModel: { pageSize: 10 } },
-            sorting: {
-              sortModel: [{ field: 'createdAt', sort: 'desc' }],
-            },
-          }}
-          pageSizeOptions={[10, 25, 50]}
-          disableRowSelectionOnClick
+            columns={columns}
+            getRowId={(row) => row._id || Math.random().toString()}
+            autoHeight
+            sortingOrder={['desc', 'asc']}
+            initialState={{ 
+              sorting: {
+                sortModel: [{ field: 'createdAt', sort: 'desc' }],
+              },
+            }}
+            paginationMode="server"
+            rowCount={data?.pagination.totalResults ?? 0}
+            paginationModel={paginationModel}
+            onPaginationModelChange={(model) => setPaginationModel(model)}
+            pageSizeOptions={[10, 25, 50]}
+            disableRowSelectionOnClick
             columnVisibilityModel={columnVisibilityModel}
             onColumnVisibilityModelChange={(model) => setColumnVisibilityModel(model)}
-          sx={{
+            sx={{
               minWidth: 800,
-            '& .MuiDataGrid-cell': {
-              fontSize: '0.875rem',
-            },
-            '& .MuiDataGrid-columnHeader': {
-              fontSize: '0.875rem',
-              fontWeight: 600,
-            },
-          }}
-        />
+              '& .MuiDataGrid-cell': {
+                fontSize: '0.875rem',
+              },
+              '& .MuiDataGrid-columnHeader': {
+                fontSize: '0.875rem',
+                fontWeight: 600,
+              },
+            }}
+          />
         </Box>
       )}
       

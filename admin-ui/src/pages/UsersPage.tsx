@@ -53,7 +53,17 @@ type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
 type User = import('../api/usersApi').User;
 
 export default function UsersPage() {
-  const { data: users = [], isLoading, error } = useGetUsersQuery();
+  const [paginationModel, setPaginationModel] = useState<{ page: number; pageSize: number }>({
+    page: 0,
+    pageSize: 10,
+  });
+
+  const { data, isLoading, error } = useGetUsersQuery({
+    page: paginationModel.page + 1,
+    limit: paginationModel.pageSize,
+  });
+
+  const users = data?.users ?? [];
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
   const [updateUser] = useUpdateUserMutation();
   const [deleteUser] = useDeleteUserMutation();
@@ -428,34 +438,37 @@ export default function UsersPage() {
         />
         {searchTerm && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Showing {filteredUsers.length} of {users.length} users
+            Showing {filteredUsers.length} of {data?.pagination.totalResults ?? 0} users
           </Typography>
         )}
       </Box>
       {isLoading ? <CircularProgress /> : error ? <Alert severity="error">{(error as unknown as { data?: { error?: string } }).data?.error || 'Failed to load users'}</Alert> : (
         <Box sx={{ width: '100%', overflow: 'auto' }}>
-        <DataGrid
-          rows={filteredUsers}
-          columns={columns}
-          getRowId={(row) => row._id}
-          autoHeight
-          initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
-          pageSizeOptions={[10, 25, 50]}
-          disableRowSelectionOnClick
-          sx={{
-            '& .MuiDataGrid-root': {
+          <DataGrid
+            rows={filteredUsers}
+            columns={columns}
+            getRowId={(row) => row._id}
+            autoHeight
+            paginationMode="server"
+            rowCount={data?.pagination.totalResults ?? 0}
+            paginationModel={paginationModel}
+            onPaginationModelChange={(model) => setPaginationModel(model)}
+            pageSizeOptions={[10, 25, 50]}
+            disableRowSelectionOnClick
+            sx={{
+              '& .MuiDataGrid-root': {
                 border: 'none',
-            },
-            '& .MuiDataGrid-main': {
+              },
+              '& .MuiDataGrid-main': {
                 overflowX: 'auto',
-            },
-            '& .MuiDataGrid-cell': {
+              },
+              '& .MuiDataGrid-cell': {
                 borderBottom: '1px solid rgba(224, 224, 224, 1)',
                 padding: '12px 8px',
-              display: 'flex',
-              alignItems: 'center',
-            },
-            '& .MuiDataGrid-columnHeader': {
+                display: 'flex',
+                alignItems: 'center',
+              },
+              '& .MuiDataGrid-columnHeader': {
                 backgroundColor: 'rgba(0, 0, 0, 0.05)',
                 fontWeight: 'bold',
                 borderBottom: '2px solid rgba(224, 224, 224, 1)',
@@ -474,8 +487,8 @@ export default function UsersPage() {
               '& .MuiDataGrid-cell:focus-within': {
                 outline: 'none',
               },
-          }}
-        />
+            }}
+          />
         </Box>
       )}
       {/* Add User Dialog */}

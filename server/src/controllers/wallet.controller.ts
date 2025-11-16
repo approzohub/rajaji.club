@@ -188,7 +188,9 @@ export async function listWalletTransactions(req: AuthRequest, res: Response) {
     }
   }
   
-  const txns = await WalletTransaction.find(filter).populate('user', 'fullName email phone gameId').sort({ createdAt: -1 }).limit(100);
+  const txns = await WalletTransaction.find(filter)
+    .populate('user', 'fullName email phone gameId')
+    .sort({ createdAt: -1 });
   res.json(txns);
 }
 
@@ -196,18 +198,44 @@ export async function listWallets(req: AuthRequest, res: Response) {
   const { id: userId, role } = req.user || {};
   if (!role || (role !== 'admin' && role !== 'agent')) return res.status(403).json({ error: 'Forbidden' });
   
-  let wallets;
-  if (role === 'admin') {
-    // Admin can see all wallets
-    wallets = await Wallet.find().populate('user', 'fullName email phone gameId role').sort({ updatedAt: -1 });
-  } else {
+  const page = Math.max(parseInt(req.query.page as string, 10) || 1, 1);
+  const limit = Math.max(parseInt(req.query.limit as string, 10) || 50, 1);
+  const skip = (page - 1) * limit;
+
+  let filter: any = {};
+  if (role === 'agent') {
     // Agent can only see wallets of their assigned users
     const assignedUsers = await User.find({ assignedAgent: userId }).select('_id');
     const assignedUserIds = assignedUsers.map(u => u._id);
-    wallets = await Wallet.find({ user: { $in: assignedUserIds } }).populate('user', 'fullName email phone gameId role').sort({ updatedAt: -1 });
+    filter = { user: { $in: assignedUserIds } };
   }
-  
-  res.json(wallets);
+
+  const [wallets, total] = await Promise.all([
+    Wallet.find(filter)
+      .populate('user', 'fullName email phone gameId role')
+      .sort({ updatedAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Wallet.countDocuments(filter),
+  ]);
+
+  const agentTotal = wallets.filter((w: any) => w.user && w.user.role === 'agent').length;
+  const userTotal = wallets.filter((w: any) => w.user && w.user.role === 'user').length;
+
+  res.json({
+    wallets,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalResults: total,
+      pageSize: limit,
+    },
+    counts: {
+      total,
+      agents: agentTotal,
+      users: userTotal,
+    },
+  });
 } 
 
 export async function manualDebit(req: AuthRequest, res: Response) {

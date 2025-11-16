@@ -33,8 +33,27 @@ export const walletApi = createApi({
   baseQuery,
   tagTypes: ['Wallet'],
   endpoints: (builder) => ({
-    getWallets: builder.query<Wallet[], void>({
-      query: () => 'wallet',
+    getWallets: builder.query<{
+      wallets: Wallet[];
+      pagination: {
+        currentPage: number;
+        totalPages: number;
+        totalResults: number;
+        pageSize: number;
+      };
+      counts: {
+        total: number;
+        agents: number;
+        users: number;
+      };
+    }, { page?: number; limit?: number } | void>({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.set('page', String(params.page));
+        if (params?.limit) searchParams.set('limit', String(params.limit));
+        const qs = searchParams.toString();
+        return `wallet${qs ? `?${qs}` : ''}`;
+      },
       providesTags: ['Wallet'],
     }),
     getMyWallet: builder.query<Wallet, void>({

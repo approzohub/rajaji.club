@@ -50,13 +50,27 @@ export async function createGame(req: AuthRequest, res: Response) {
 export async function listGames(req: AuthRequest, res: Response) {
   try {
     const { status } = req.query;
+    const page = Math.max(parseInt(req.query.page as string, 10) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit as string, 10) || 50, 1);
+    const skip = (page - 1) * limit;
+
     const filter: any = {};
     if (status) filter.status = status;
     
+    // Counts for summary cards
+    const [totalGames, openGames, waitingResultGames, declaredGames, totalResults] = await Promise.all([
+      Game.countDocuments(),
+      Game.countDocuments({ status: 'open' }),
+      Game.countDocuments({ status: 'waiting_result' }),
+      Game.countDocuments({ status: 'result_declared' }),
+      Game.countDocuments(filter),
+    ]);
+
     const games = await Game.find(filter)
       .populate('declaredBy', 'fullName email')
       .sort({ createdAt: -1 })
-      .limit(100);
+      .skip(skip)
+      .limit(limit);
     
     // Add total payout for declared games
     const gamesWithPayout = await Promise.all(
@@ -79,7 +93,21 @@ export async function listGames(req: AuthRequest, res: Response) {
       })
     );
     
-    res.json(gamesWithPayout);
+    res.json({
+      games: gamesWithPayout,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalResults / limit),
+        totalResults,
+        pageSize: limit,
+      },
+      counts: {
+        totalGames,
+        openGames,
+        waitingResultGames,
+        declaredGames,
+      },
+    });
   } catch (error: any) {
     console.error('Error listing games:', error);
     res.status(500).json({ error: 'Failed to list games' });

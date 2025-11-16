@@ -214,7 +214,7 @@ export default function GamePage() {
         const gameResponse = await apiClient.getGameTimer();
         if (gameResponse.data) {
           if (gameResponse.data.activeGameId) {
-            setCurrentGameId(gameResponse.data.activeGameId);
+          setCurrentGameId(gameResponse.data.activeGameId);
           }
           setIsGameWaiting(
             !gameResponse.data.activeGameId ||

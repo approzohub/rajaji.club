@@ -360,8 +360,25 @@ class ApiClient {
   }
 
   // Withdrawal APIs
-  async getWithdrawals(): Promise<ApiResponse<Withdrawal[]>> {
-    return this.request('/wallet/withdrawals');
+  async getWithdrawals(page?: number, limit?: number): Promise<ApiResponse<{
+    withdrawals: Withdrawal[];
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalResults: number;
+      pageSize: number;
+    };
+    counts: {
+      total: number;
+      pending: number;
+    };
+  }>> {
+    const params = new URLSearchParams();
+    if (page) params.append('page', page.toString());
+    if (limit) params.append('limit', limit.toString());
+
+    const endpoint = `/wallet/withdrawals${params.toString() ? `?${params.toString()}` : ''}`;
+    return this.request(endpoint);
   }
 
   async requestWithdrawal(data: {

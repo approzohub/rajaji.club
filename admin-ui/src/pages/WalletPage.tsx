@@ -18,7 +18,17 @@ const objectIdRegex = /^[a-fA-F0-9]{24}$/;
 const normalizePhoneNumber = (value: string) => value.replace(/\D/g, '');
 
 export default function WalletPage() {
-  const { data: wallets = [], isLoading, error, refetch } = useGetWalletsQuery();
+  const [paginationModel, setPaginationModel] = useState<{ page: number; pageSize: number }>({
+    page: 0,
+    pageSize: 10,
+  });
+
+  const { data, isLoading, error, refetch } = useGetWalletsQuery({
+    page: paginationModel.page + 1,
+    limit: paginationModel.pageSize,
+  });
+
+  const wallets = data?.wallets ?? [];
   const [rechargeWallet] = useRechargeWalletMutation();
   const [manualDebit] = useManualDebitMutation();
   const [rechargeOpen, setRechargeOpen] = useState(false);
@@ -340,12 +350,10 @@ export default function WalletPage() {
             getRowId={(row) => row._id}
             onRowClick={handleRowClick}
             autoHeight
-            initialState={{ 
-              pagination: { paginationModel: { pageSize: 10 } },
-              columns: {
-                columnVisibilityModel: {},
-              },
-            }}
+            paginationMode="server"
+            rowCount={data?.pagination.totalResults ?? 0}
+            paginationModel={paginationModel}
+            onPaginationModelChange={(model) => setPaginationModel(model)}
             pageSizeOptions={[10, 25, 50]}
             sx={{
               width: '100%',

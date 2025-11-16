@@ -17,6 +17,7 @@ interface WithdrawContentProps {
 
 interface Withdrawal {
   _id: string;
+  user?: string | { _id: string };
   amount: number;
   walletType: 'main'; // Only main wallet withdrawals allowed
   status: 'pending' | 'approved' | 'rejected' | 'completed';
@@ -37,6 +38,9 @@ interface PaymentMethod {
 
 export function WithdrawContent({ onAddUpiClick, onPaymentMethodAdded, onPaymentMethodDeleted }: WithdrawContentProps) {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalResults, setTotalResults] = useState(0);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
@@ -46,7 +50,7 @@ export function WithdrawContent({ onAddUpiClick, onPaymentMethodAdded, onPayment
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeletingPayment, setIsDeletingPayment] = useState<string | null>(null);
   
-  const { isLoggedIn, refreshBalance } = useAuthStore();
+  const { isLoggedIn, refreshBalance, user } = useAuthStore();
   const { alert, showSuccess, showError, closeAlert } = useAlert();
   const { settings } = useAppSettings();
   
@@ -60,13 +64,41 @@ export function WithdrawContent({ onAddUpiClick, onPaymentMethodAdded, onPayment
     }
   }, [onPaymentMethodAdded]);
 
-  const fetchWithdrawals = useCallback(async () => {
+  const fetchWithdrawals = useCallback(async (page = 1) => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await apiClient.getWithdrawals();
+      const response = await apiClient.getWithdrawals(page, pageSize);
       if (response.data) {
-        setWithdrawals(response.data);
+        const responseData = response.data as {
+          withdrawals: Withdrawal[];
+          pagination?: { totalResults?: number };
+        } | Withdrawal[];
+
+        let allWithdrawals: Withdrawal[];
+
+        if (Array.isArray(responseData)) {
+          // Backward compatibility, in case API still returns an array
+          allWithdrawals = responseData;
+        } else {
+          allWithdrawals = responseData.withdrawals || [];
+        }
+
+        // Client-side filter to only show current user's withdrawals
+        const currentUserId = user?.id;
+        const filteredForUser = currentUserId
+          ? allWithdrawals.filter((w) => {
+              const withdrawalUser = w.user;
+              if (!withdrawalUser) return true; // fallback if API doesn't include user
+              if (typeof withdrawalUser === 'string') {
+                return withdrawalUser === currentUserId;
+              }
+              return withdrawalUser._id === currentUserId;
+            })
+          : allWithdrawals;
+
+        setWithdrawals(filteredForUser);
+        setTotalResults(filteredForUser.length);
       } else if (response.error) {
         setError(response.error);
       }
@@ -76,7 +108,7 @@ export function WithdrawContent({ onAddUpiClick, onPaymentMethodAdded, onPayment
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [pageSize]);
 
   const fetchPaymentMethods = useCallback(async () => {
     try {
@@ -105,10 +137,10 @@ export function WithdrawContent({ onAddUpiClick, onPaymentMethodAdded, onPayment
 
   useEffect(() => {
     if (isLoggedIn) {
-      fetchWithdrawals();
+      fetchWithdrawals(currentPage);
       fetchPaymentMethods();
     }
-  }, [isLoggedIn, fetchWithdrawals, fetchPaymentMethods]);
+  }, [isLoggedIn, currentPage, fetchWithdrawals, fetchPaymentMethods]);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [paymentToDelete, setPaymentToDelete] = useState<string | null>(null);
@@ -200,7 +232,7 @@ export function WithdrawContent({ onAddUpiClick, onPaymentMethodAdded, onPayment
       } else {
         showSuccess('Withdrawal request submitted successfully!');
         setWithdrawAmount('');
-        fetchWithdrawals(); // Refresh the list
+        fetchWithdrawals(currentPage); // Refresh the list
         await refreshBalance(); // Refresh balance in header
       }
     } catch {
@@ -691,6 +723,47 @@ export function WithdrawContent({ onAddUpiClick, onPaymentMethodAdded, onPayment
               )}
             </tbody>
           </table>
+          {/* Simple pagination controls */}
+          {totalResults > pageSize && withdrawals.length > 0 && (
+            <div className="flex justify-between items-center mt-4 px-2">
+              <span
+                style={{
+                  fontFamily: 'Poppins, sans-serif',
+                  fontSize: '12px',
+                  color: '#7A7A7A',
+                }}
+              >
+                Showing {(currentPage - 1) * pageSize + 1}-
+                {Math.min(currentPage * pageSize, totalResults)} of {totalResults} withdrawals
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={currentPage === 1 || isLoading}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="px-3 py-1 rounded border border-gray-300 text-sm disabled:opacity-50"
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    color: '#111827',
+                  }}
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  disabled={currentPage * pageSize >= totalResults || isLoading}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  className="px-3 py-1 rounded border border-gray-300 text-sm disabled:opacity-50"
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    color: '#111827',
+                  }}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
         </div>
         </div>
       </div>

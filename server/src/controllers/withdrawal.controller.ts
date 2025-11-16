@@ -81,6 +81,10 @@ export async function listWithdrawals(req: AuthRequest, res: Response) {
   const { id: userId, role } = req.user || {};
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
   
+  const page = Math.max(parseInt(req.query.page as string, 10) || 1, 1);
+  const limit = Math.max(parseInt(req.query.limit as string, 10) || 50, 1);
+  const skip = (page - 1) * limit;
+
   let filter: any = {};
   
   // Users can only see their own withdrawals
@@ -98,13 +102,31 @@ export async function listWithdrawals(req: AuthRequest, res: Response) {
     filter.user = userId;
   }
   
-  const withdrawals = await Withdrawal.find(filter)
-    .populate('user', 'fullName gameId email phone')
-    .populate('paymentMethod', 'name upiId')
-    .populate('processedBy', 'fullName role')
-    .sort({ createdAt: -1 })
-    .limit(100);
-  res.json(withdrawals);
+  const [total, pendingCount, withdrawals] = await Promise.all([
+    Withdrawal.countDocuments(filter),
+    Withdrawal.countDocuments({ ...filter, status: 'pending' }),
+    Withdrawal.find(filter)
+      .populate('user', 'fullName gameId email phone')
+      .populate('paymentMethod', 'name upiId')
+      .populate('processedBy', 'fullName role')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+  ]);
+
+  res.json({
+    withdrawals,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalResults: total,
+      pageSize: limit,
+    },
+    counts: {
+      total: total,
+      pending: pendingCount,
+    },
+  });
 }
 
 export async function approveWithdrawal(req: AuthRequest, res: Response) {

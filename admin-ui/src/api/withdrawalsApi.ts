@@ -33,8 +33,26 @@ export const withdrawalsApi = createApi({
   baseQuery,
   tagTypes: ['Withdrawal'],
   endpoints: (builder) => ({
-    getWithdrawals: builder.query<Withdrawal[], void>({
-      query: () => 'wallet/withdrawals',
+    getWithdrawals: builder.query<{
+      withdrawals: Withdrawal[];
+      pagination: {
+        currentPage: number;
+        totalPages: number;
+        totalResults: number;
+        pageSize: number;
+      };
+      counts: {
+        total: number;
+        pending: number;
+      };
+    }, { page?: number; limit?: number } | void>({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.set('page', String(params.page));
+        if (params?.limit) searchParams.set('limit', String(params.limit));
+        const qs = searchParams.toString();
+        return `wallet/withdrawals${qs ? `?${qs}` : ''}`;
+      },
       providesTags: ['Withdrawal'],
     }),
     requestWithdrawal: builder.mutation<Withdrawal, { amount: number; walletType: 'main'; note?: string }>({

@@ -28,8 +28,28 @@ export const usersApi = createApi({
   baseQuery,
   tagTypes: ['User'],
   endpoints: (builder) => ({
-    getUsers: builder.query<User[], void>({
-      query: () => 'users',
+    getUsers: builder.query<{
+      users: User[];
+      pagination: {
+        currentPage: number;
+        totalPages: number;
+        totalResults: number;
+        pageSize: number;
+      };
+      counts: {
+        total: number;
+        active: number;
+        disabled: number;
+        banned: number;
+      };
+    }, { page?: number; limit?: number } | void>({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.set('page', String(params.page));
+        if (params?.limit) searchParams.set('limit', String(params.limit));
+        const qs = searchParams.toString();
+        return `users${qs ? `?${qs}` : ''}`;
+      },
       providesTags: ['User'],
     }),
     createUser: builder.mutation<User, Partial<User>>({

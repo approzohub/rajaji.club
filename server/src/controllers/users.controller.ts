@@ -74,17 +74,23 @@ export async function listUsers(req: AuthRequest, res: Response) {
   if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'agent')) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  
-  let users;
-  if (req.user.role === 'admin') {
-    // Admin can see all users
-    users = await User.find().select('-password').sort({ createdAt: -1 });
-  } else {
-    // Agent can only see their assigned users
-    users = await User.find({ assignedAgent: req.user.id }).select('-password').sort({ createdAt: -1 });
-  }
-  
-  // Get payment methods for all users
+
+  const page = Math.max(parseInt(req.query.page as string, 10) || 1, 1);
+  const limit = Math.max(parseInt(req.query.limit as string, 10) || 50, 1);
+  const skip = (page - 1) * limit;
+
+  const filter: any = req.user.role === 'admin'
+    ? {}
+    : { assignedAgent: req.user.id };
+
+  const [users, total, activeCount, disabledCount, bannedCount] = await Promise.all([
+    User.find(filter).select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit),
+    User.countDocuments(filter),
+    User.countDocuments({ ...filter, status: 'active' }),
+    User.countDocuments({ ...filter, status: 'disabled' }),
+    User.countDocuments({ ...filter, status: 'banned' }),
+  ]);
+
   const usersWithPayments = await Promise.all(
     users.map(async (user) => {
       const userObj = user.toObject();
@@ -95,8 +101,22 @@ export async function listUsers(req: AuthRequest, res: Response) {
       };
     })
   );
-  
-  res.json(usersWithPayments);
+
+  res.json({
+    users: usersWithPayments,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalResults: total,
+      pageSize: limit,
+    },
+    counts: {
+      total,
+      active: activeCount,
+      disabled: disabledCount,
+      banned: bannedCount,
+    },
+  });
 }
 
 const updateUserSchema = z.object({

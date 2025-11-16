@@ -42,7 +42,6 @@ import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef, GridColumnVisibilityModel } from '@mui/x-data-grid';
 import { 
   useGetGamesQuery, 
-  useGetGamesByStatusQuery,
   useGetCardsQuery,
   useDeclareWinnerMutation,
   useGetGameWinnersQuery
@@ -76,15 +75,30 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function GamesPage() {
-  const { data: games = [], isLoading, error } = useGetGamesQuery();
-  const { data: openGames = [] } = useGetGamesByStatusQuery('open');
-  const { data: waitingGames = [] } = useGetGamesByStatusQuery('waiting_result');
-  const { data: declaredGames = [] } = useGetGamesByStatusQuery('result_declared');
+  const [tabValue, setTabValue] = useState(0);
+  const [paginationModel, setPaginationModel] = useState<{ page: number; pageSize: number }>({
+    page: 0,
+    pageSize: 10,
+  });
+
+  const currentStatus =
+    tabValue === 1 ? 'open' :
+    tabValue === 2 ? 'waiting_result' :
+    tabValue === 3 ? 'result_declared' :
+    undefined;
+
+  const { data, isLoading, error } = useGetGamesQuery({
+    status: currentStatus,
+    page: paginationModel.page + 1, // API is 1-based
+    limit: paginationModel.pageSize,
+  });
+
+  const games = data?.games ?? [];
+  const counts = data?.counts;
   const { data: cards = [] } = useGetCardsQuery();
   
   const [declareWinner] = useDeclareWinnerMutation();
   
-  const [tabValue, setTabValue] = useState(0);
   const [openDeclareWinnerDialog, setOpenDeclareWinnerDialog] = useState(false);
   const [openSuccessDialog, setOpenSuccessDialog] = useState(false);
   const [openAnalyticsDialog, setOpenAnalyticsDialog] = useState(false);
@@ -159,6 +173,7 @@ export default function GamesPage() {
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
   };
 
   const handleOpenDeclareWinner = (game: Game) => {
@@ -230,14 +245,6 @@ export default function GamesPage() {
       const errorMessage = error instanceof Error ? error.message : 'Failed to declare winner';
       alert(`Error: ${errorMessage}`);
     }
-  };
-
-  const getDisplayGames = () => {
-    if (tabValue === 0) return games;
-    if (tabValue === 1) return openGames;
-    if (tabValue === 2) return waitingGames;
-    if (tabValue === 3) return declaredGames;
-    return games;
   };
 
   const getGameStatusColor = (status: string) => {
@@ -607,7 +614,7 @@ export default function GamesPage() {
               Total Games
             </Typography>
             <Typography variant="h4">
-              {games.length}
+              {counts?.totalGames ?? 0}
             </Typography>
           </CardContent>
         </MuiCard>
@@ -617,7 +624,7 @@ export default function GamesPage() {
               Open Games
             </Typography>
             <Typography variant="h4">
-              {openGames.length}
+              {counts?.openGames ?? 0}
             </Typography>
           </CardContent>
         </MuiCard>
@@ -627,7 +634,7 @@ export default function GamesPage() {
               Waiting Result
             </Typography>
             <Typography variant="h4">
-              {waitingGames.length}
+              {counts?.waitingResultGames ?? 0}
             </Typography>
           </CardContent>
         </MuiCard>
@@ -637,7 +644,7 @@ export default function GamesPage() {
               Declared Games
             </Typography>
             <Typography variant="h4">
-              {declaredGames.length}
+              {counts?.declaredGames ?? 0}
             </Typography>
           </CardContent>
         </MuiCard>
@@ -761,16 +768,15 @@ export default function GamesPage() {
         <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', px: 0 }}>
           <Box sx={{ width: '100%', overflowX: 'auto' }}>
         <DataGrid
-          rows={getDisplayGames()}
+          rows={games}
           columns={gameColumns}
           getRowId={(row) => row._id}
               columnVisibilityModel={columnVisibilityModel}
               onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel as GridColumnVisibilityModel)}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10 },
-            },
-          }}
+          paginationMode="server"
+          rowCount={data?.pagination.totalResults ?? 0}
+          paginationModel={paginationModel}
+          onPaginationModelChange={(model) => setPaginationModel(model)}
           pageSizeOptions={[10, 25, 50]}
           disableRowSelectionOnClick
           autoHeight
@@ -818,16 +824,15 @@ export default function GamesPage() {
         <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', px: 0 }}>
           <Box sx={{ width: '100%', overflowX: 'auto' }}>
         <DataGrid
-          rows={getDisplayGames()}
+          rows={games}
           columns={gameColumns}
           getRowId={(row) => row._id}
               columnVisibilityModel={columnVisibilityModel}
               onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel as GridColumnVisibilityModel)}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10 },
-            },
-          }}
+          paginationMode="server"
+          rowCount={data?.pagination.totalResults ?? 0}
+          paginationModel={paginationModel}
+          onPaginationModelChange={(model) => setPaginationModel(model)}
           pageSizeOptions={[10, 25, 50]}
           disableRowSelectionOnClick
           autoHeight
@@ -875,16 +880,15 @@ export default function GamesPage() {
         <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', px: 0 }}>
           <Box sx={{ width: '100%', overflowX: 'auto' }}>
         <DataGrid
-          rows={getDisplayGames()}
+          rows={games}
           columns={gameColumns}
           getRowId={(row) => row._id}
               columnVisibilityModel={columnVisibilityModel}
               onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel as GridColumnVisibilityModel)}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10 },
-            },
-          }}
+          paginationMode="server"
+          rowCount={data?.pagination.totalResults ?? 0}
+          paginationModel={paginationModel}
+          onPaginationModelChange={(model) => setPaginationModel(model)}
           pageSizeOptions={[10, 25, 50]}
           disableRowSelectionOnClick
           autoHeight
@@ -932,16 +936,15 @@ export default function GamesPage() {
         <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', px: 0 }}>
           <Box sx={{ width: '100%', overflowX: 'auto' }}>
         <DataGrid
-          rows={getDisplayGames()}
+          rows={games}
           columns={gameColumns}
           getRowId={(row) => row._id}
               columnVisibilityModel={columnVisibilityModel}
               onColumnVisibilityModelChange={(newModel) => setColumnVisibilityModel(newModel as GridColumnVisibilityModel)}
-          initialState={{
-            pagination: {
-              paginationModel: { pageSize: 10 },
-            },
-          }}
+          paginationMode="server"
+          rowCount={data?.pagination.totalResults ?? 0}
+          paginationModel={paginationModel}
+          onPaginationModelChange={(model) => setPaginationModel(model)}
           pageSizeOptions={[10, 25, 50]}
           disableRowSelectionOnClick
           autoHeight
