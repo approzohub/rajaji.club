@@ -6,6 +6,8 @@ import { useGetWithdrawalsQuery, useApproveWithdrawalMutation, useRejectWithdraw
 import { useGetUsersQuery } from '../api/usersApi';
 import { useState, useMemo } from 'react';
 
+type User = import('../api/usersApi').User;
+
 export default function WithdrawalsPage() {
   const [paginationModel, setPaginationModel] = useState<{ page: number; pageSize: number }>({
     page: 0,
@@ -18,7 +20,8 @@ export default function WithdrawalsPage() {
   });
 
   const withdrawals = data?.withdrawals ?? [];
-  const { data: users = [], isLoading: isLoadingUsers } = useGetUsersQuery();
+  const { data: usersResponse, isLoading: isLoadingUsers } = useGetUsersQuery();
+  const users: User[] = usersResponse?.users ?? [];
   
   // Temporary debug to check data structure
   if (withdrawals.length > 0) {
@@ -52,7 +55,7 @@ export default function WithdrawalsPage() {
     if (!selected) return undefined;
     const u = selected.user as unknown;
     if (u && typeof u === 'object') return u as PopulatedUser;
-    const byId = users.find(x => x._id === selected.user);
+    const byId = users.find((x: User) => x._id === selected.user);
     if (byId) return { _id: byId._id, fullName: byId.fullName, gameId: byId.gameId, phone: byId.phone, email: byId.email } as PopulatedUser;
     return undefined;
   }, [selected, users]);
@@ -140,8 +143,8 @@ export default function WithdrawalsPage() {
   };
 
   const userMap = useMemo(() => {
-    const map = new Map<string, (typeof users)[number]>();
-    users.forEach(user => map.set(user._id, user));
+    const map = new Map<string, User>();
+    users.forEach((user: User) => map.set(user._id, user));
     return map;
   }, [users]);
 
@@ -642,7 +645,7 @@ export default function WithdrawalsPage() {
                       const userObj = selectedWithdrawalForAction.user as PopulatedUser;
                       return userObj.fullName ?? 'Unknown';
                     }
-                    const user = users.find(u => u._id === selectedWithdrawalForAction.user);
+                    const user = users.find((u: User) => u._id === selectedWithdrawalForAction.user);
                     return user ? user.fullName : 'Unknown';
                   })()}
                 </Typography>
@@ -660,7 +663,7 @@ export default function WithdrawalsPage() {
                     const userObj = selectedWithdrawalForAction.user as PopulatedUser;
                     return userObj.phone ? <Typography variant="body2">Phone: {userObj.phone}</Typography> : null;
                   }
-                  const user = users.find(u => u._id === selectedWithdrawalForAction.user);
+                  const user = users.find((u: User) => u._id === selectedWithdrawalForAction.user);
                   return user?.phone ? <Typography variant="body2">Phone: {user.phone}</Typography> : null;
                 })()}
                 <Typography variant="body2">

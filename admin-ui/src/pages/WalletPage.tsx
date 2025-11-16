@@ -14,6 +14,8 @@ const walletTypes = [
   { value: 'bonus', label: 'Bonus' },
 ];
 
+type User = import('../api/usersApi').User;
+
 const objectIdRegex = /^[a-fA-F0-9]{24}$/;
 const normalizePhoneNumber = (value: string) => value.replace(/\D/g, '');
 
@@ -40,10 +42,11 @@ export default function WalletPage() {
   const [rechargeFormData, setRechargeFormData] = useState<RechargePayload | null>(null);
   const [rechargeUserIdentifier, setRechargeUserIdentifier] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const { data: users = [] } = useGetUsersQuery();
+  const { data: usersResponse } = useGetUsersQuery();
+  const users: User[] = usersResponse?.users ?? [];
   const usersMap = useMemo(() => {
-    const map = new Map<string, (typeof users)[number]>();
-    users.forEach(user => map.set(user._id, user));
+    const map = new Map<string, User>();
+    users.forEach((user: User) => map.set(user._id, user));
     return map;
   }, [users]);
 
@@ -55,7 +58,7 @@ export default function WalletPage() {
     const normalizedInput = normalizePhoneNumber(trimmed);
     if (!normalizedInput) return null;
 
-    const matchedUser = users.find(user => normalizePhoneNumber(user.phone || '') === normalizedInput);
+    const matchedUser = users.find((user: User) => normalizePhoneNumber(user.phone || '') === normalizedInput);
     return matchedUser?._id || null;
   };
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<WalletFormData>();
@@ -389,9 +392,9 @@ export default function WalletPage() {
           },
         }}
       >
-        <DialogTitle>
-          Transaction History - {selectedUserId && wallets.find(w => w.user._id === selectedUserId)?.user.fullName}
-        </DialogTitle>
+          <DialogTitle>
+            Transaction History - {selectedUserId && wallets.find((w) => w.user._id === selectedUserId)?.user.fullName}
+          </DialogTitle>
         <DialogContent>
           {transactionsLoading ? (
             <Box display="flex" justifyContent="center" p={3}>
@@ -447,7 +450,7 @@ export default function WalletPage() {
                     width: 200,
                     renderCell: (params) => {
                       const initiatorId = params.value;
-                      const initiator = users.find(u => u._id === initiatorId);
+                      const initiator = users.find((u: User) => u._id === initiatorId);
                       return (
                         <Typography>
                           {initiator ? `${initiator.fullName} (${initiator.role})` : initiatorId}
@@ -558,7 +561,7 @@ export default function WalletPage() {
               </Alert>
               <Box sx={{ mb: 2 }}>
                 {(() => {
-                  const user = users.find(u => u._id === rechargeFormData.userId);
+                  const user = users.find((u: User) => u._id === rechargeFormData.userId);
                   return (
                     <Box>
                       <Typography variant="body2" color="text.secondary" gutterBottom>
