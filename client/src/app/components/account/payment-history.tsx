@@ -302,12 +302,17 @@ export function PaymentHistoryContent() {
       
       {/* Fixed Table Header */}
       <div className={accountPageStyles.table.wrapper}>
-        <table className={accountPageStyles.table.container}>
+        <table className={accountPageStyles.table.container} style={{ tableLayout: 'fixed', width: '100%' }}>
+          <colgroup>
+            <col style={{ width: '40%' }} />
+            <col style={{ width: '30%' }} />
+            <col style={{ width: '30%' }} />
+          </colgroup>
           <thead>
             <tr className={accountPageStyles.table.header}>
-              <th className={accountPageStyles.table.headerCell} style={accountPageStyles.table.headerText}>Date & Time</th>
-              <th className={accountPageStyles.table.headerCell} style={accountPageStyles.table.headerText}>Amount</th>
-              <th className={`${accountPageStyles.table.headerCell} text-right`} style={accountPageStyles.table.headerText}>Payment Mode</th>
+              <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left'}}>Date & Time</th>
+              <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left'}}>Amount</th>
+              <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left'}}>Payment Mode</th>
             </tr>
           </thead>
         </table>
@@ -316,7 +321,12 @@ export function PaymentHistoryContent() {
       {/* Scrollable Table Body */}
       <div ref={scrollableContainerRef} className="overflow-y-auto max-h-[350px]">
         <div className={accountPageStyles.table.wrapper}>
-          <table className={accountPageStyles.table.container}>
+          <table className={accountPageStyles.table.container} style={{ tableLayout: 'fixed', width: '100%' }}>
+            <colgroup>
+              <col style={{ width: '40%' }} />
+              <col style={{ width: '30%' }} />
+              <col style={{ width: '30%' }} />
+            </colgroup>
             <tbody className={accountPageStyles.table.body}>
               {transactions.length === 0 ? (
                 <tr>
@@ -333,13 +343,13 @@ export function PaymentHistoryContent() {
                   
                   return (
                     <tr key={`${transaction._id}_${idx}`} className={idx % 2 === 0 ? "bg-white" : accountPageStyles.table.alternateRow}>
-                      <td className={`${accountPageStyles.table.cell} whitespace-nowrap`} style={accountPageStyles.table.cellText}>
+                      <td className={`${accountPageStyles.table.cell} whitespace-nowrap`} style={{...accountPageStyles.table.cellText, textAlign: 'left'}}>
                         {formatDateTime(transaction.createdAt)}
                       </td>
-                      <td className={accountPageStyles.table.cell} style={{...accountPageStyles.table.cellText, color: amountColor}}>
+                      <td className={accountPageStyles.table.cell} style={{...accountPageStyles.table.cellText, color: amountColor, textAlign: 'left'}}>
                         {amountPrefix}₹{displayAmount}
                       </td>
-                      <td className={`${accountPageStyles.table.cell} text-right`} style={{...accountPageStyles.table.cellText, color: '#000000'}}>
+                      <td className={accountPageStyles.table.cell} style={{...accountPageStyles.table.cellText, color: '#000000', textAlign: 'left'}}>
                         {transaction.paymentMode === 'UPI' 
                           ? (transaction.amount > 0 ? 'Deposit' : 'Withdraw')
                           : transaction.paymentMode

@@ -859,9 +859,9 @@ export default function GamePage() {
                 </div>
               </div>
               
-              {/* Sticky PAY NOW button for mobile */}
+              {/* Sticky PAY NOW/TIME OUT button for mobile */}
               <div 
-                className="fixed bottom-0 left-0 right-0 z-9999 bg-[#0a0f1a] py-0 flex justify-center pointer-events-auto"
+                className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0f1a] flex flex-col items-center pointer-events-auto"
                 style={{
                   position: 'fixed',
                   bottom: 0,
@@ -871,15 +871,42 @@ export default function GamePage() {
                   pointerEvents: 'auto',
                   WebkitTransform: 'translateZ(0)',
                   transform: 'translateZ(0)',
+                  minHeight: '60px',
                 }}
               >
+                {cartItems.length > 0 && winningAmount > 0 && !isBidPlaced && (
+                  <div className="w-full max-w-md text-center pt-2 pb-1" style={{ minHeight: '28px' }}>
+                    <span
+                      style={{
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 600,
+                        fontStyle: 'normal',
+                        fontSize: '16px',
+                        lineHeight: '20px',
+                        letterSpacing: '0%',
+                        color: '#02C060',
+                      }}
+                    >
+                      Winning amount can be up to ₹{formatIndianRupees(winningAmount)}
+                    </span>
+                  </div>
+                )}
+                {(!cartItems.length || isBidPlaced) && (
+                  <div className="w-full max-w-md text-center pt-2 pb-1" style={{ minHeight: '28px' }}></div>
+                )}
                 <button
-                  className="w-full max-w-md bg-[#FFCD01] text-black py-5  shadow transition-colors cursor-pointer pointer-events-auto touch-manipulation disabled:opacity-50"
+                  className={`w-full max-w-md py-4 shadow transition-colors pointer-events-auto touch-manipulation block text-center ${
+                    !isGameWaiting && cartItems.length > 0 && total <= balance
+                      ? 'bg-[#FFCD01] text-black cursor-pointer hover:bg-yellow-400' 
+                      : 'bg-[#FFCD01] text-black cursor-not-allowed'
+                  }`}
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Pay now button clicked');
-                    handlePayNow();
+                    if (!isGameWaiting && cartItems.length > 0 && total <= balance) {
+                      console.log('Pay now button clicked');
+                      handlePayNow();
+                    }
                   }}
                   onTouchStart={(e) => {
                     e.preventDefault();
@@ -887,8 +914,10 @@ export default function GamePage() {
                   }}
                   onTouchEnd={(e) => {
                     e.preventDefault();
-                    console.log('Pay now button touch end');
-                    handlePayNow();
+                    if (!isGameWaiting && cartItems.length > 0 && total <= balance) {
+                      console.log('Pay now button touch end');
+                      handlePayNow();
+                    }
                   }}
                   disabled={cartItems.length === 0 || total > balance || isGameWaiting}
                   style={{
@@ -899,34 +928,20 @@ export default function GamePage() {
                     lineHeight: '18px',
                     letterSpacing: '0%',
                     textAlign: 'center',
-                    borderRadius: '0px',
+                    borderRadius: '4px',
                     pointerEvents: 'auto',
                     WebkitTapHighlightColor: 'transparent',
                     WebkitTouchCallout: 'none',
                     WebkitUserSelect: 'none',
                     userSelect: 'none',
                     touchAction: 'manipulation',
+                    border: 'none',
+                    outline: 'none',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
                   }}
                 >
-                  PLAY NOW
+                  {isGameWaiting ? 'TIME OUT' : 'PLAY NOW'}
                 </button>
-                {cartItems.length > 0 && winningAmount > 0 && (
-                  <div className="mt-2 text-center pb-2">
-                    <span
-                      style={{
-                        fontFamily: 'Poppins, sans-serif',
-                        fontWeight: 600,
-                        fontStyle: 'normal',
-                        fontSize: '16px',
-                        lineHeight: '20px',
-                        letterSpacing: '0%',
-                    color: '#02C060',
-                      }}
-                    >
-                      Winning amount can be up to ₹{formatIndianRupees(winningAmount)}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>  
           </div>

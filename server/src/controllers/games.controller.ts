@@ -14,7 +14,7 @@ import { z } from 'zod';
 import { Types } from 'mongoose';
 import { AuthRequest } from '../middleware/auth';
 import { Result } from '../models/result.model';
-import { getCurrentISTTime, addMinutesIST, getStartOfDayIST, getEndOfDayIST, createISTDate, getCurrentTimeWindowIST, getNextTimeWindowIST, toIST } from '../utils/timezone';
+import { getCurrentISTTime, addMinutesIST, getStartOfDayIST, getEndOfDayIST, createISTDate, getCurrentTimeWindowIST, getNextTimeWindowIST, toIST, istToUTC } from '../utils/timezone';
 
 const createGameSchema = z.object({
   timeWindow: z.string(),
@@ -827,21 +827,28 @@ export async function getResultsByDateRange(req: Request, res: Response) {
     const startDateStr = startDate as string;
     const endDateStr = endDate as string;
     
-    // Create dates in IST timezone to avoid timezone issues
+    // Create dates in IST timezone
     const [startYear, startMonth, startDay] = startDateStr.split('-').map(Number);
     const [endYear, endMonth, endDay] = endDateStr.split('-').map(Number);
     
     // Create start of day for start date (00:00:00) in IST
-    const start = createISTDate(startYear, startMonth, startDay, 0, 0, 0);
+    const startIST = createISTDate(startYear, startMonth, startDay, 0, 0, 0);
     
-    // Create end of day for end date (23:59:59.999) in IST
-    const end = createISTDate(endYear, endMonth, endDay, 23, 59, 59);
+    // Create end of day for end date (23:59:59.999) in IST using getEndOfDayIST
+    const endDateIST = createISTDate(endYear, endMonth, endDay, 0, 0, 0);
+    const endIST = getEndOfDayIST(endDateIST);
+
+    // Convert IST dates to UTC for MongoDB query (MongoDB stores dates in UTC)
+    const start = istToUTC(startIST);
+    const end = istToUTC(endIST);
 
     console.log('Date range query:', {
       startDate: startDateStr,
       endDate: endDateStr,
-      start: start.toISOString(),
-      end: end.toISOString()
+      startIST: startIST.toISOString(),
+      endIST: endIST.toISOString(),
+      startUTC: start.toISOString(),
+      endUTC: end.toISOString()
     });
 
     // Get results within date range
@@ -858,7 +865,7 @@ export async function getResultsByDateRange(req: Request, res: Response) {
     
     if (isEndDateToday) {
       // If end date is today, only include results up to current time
-      queryFilter.resultDeclaredAt.$lte = now;
+      queryFilter.resultDeclaredAt.$lte = istToUTC(now);
     } else {
       // For past dates, include all results for that day
       queryFilter.resultDeclaredAt.$lte = end;

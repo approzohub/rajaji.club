@@ -107,6 +107,10 @@ export default function ResultsPage() {
 
   const fetchResultsByDateRange = async () => {
     setIsLoading(true);
+    // Clear previous data immediately when fetching new data
+    setChartData([]);
+    setDateColumns([]);
+    
     try {
       let response;
       
@@ -150,7 +154,43 @@ export default function ResultsPage() {
               timeIntervals.push(timeString);
           }
 
-          // Group results by date and time
+          // Helper function to find the closest time interval for a given time string
+          const findClosestTimeInterval = (timeString: string): string => {
+            // Parse time string (e.g., "1:29 PM" or "11:50 PM")
+            const timeMatch = timeString.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+            if (!timeMatch) return timeString; // Return original if parsing fails
+            
+            const hour = parseInt(timeMatch[1]);
+            const minute = parseInt(timeMatch[2]);
+            const period = timeMatch[3].toUpperCase();
+            
+            // Convert to 24-hour format
+            let hour24 = hour;
+            if (period === 'PM' && hour !== 12) {
+              hour24 = hour + 12;
+            } else if (period === 'AM' && hour === 12) {
+              hour24 = 0;
+            }
+            
+            // Calculate total minutes
+            const totalMinutes = hour24 * 60 + minute;
+            
+            // Round to nearest interval
+            const roundedMinutes = Math.round(totalMinutes / GAME_SLOT_INTERVAL_MINUTES) * GAME_SLOT_INTERVAL_MINUTES;
+            
+            // Convert back to time string
+            const roundedHours = Math.floor(roundedMinutes / 60) % 24;
+            const roundedMins = roundedMinutes % 60;
+            
+            const roundedDate = new Date(2024, 0, 1, roundedHours, roundedMins);
+            return roundedDate.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              hour12: true
+            });
+          };
+
+          // Group results by date and time (matching to closest time interval)
           const resultsByDateAndTime: { [date: string]: { [time: string]: string } } = {};
           
           console.log('Processing results:', results.length, 'results');
@@ -159,13 +199,17 @@ export default function ResultsPage() {
           results.forEach((result, index) => {
             const date = result.date;
             const time = result.time;
+            const closestInterval = findClosestTimeInterval(time);
             
-            console.log(`Processing result ${index + 1}:`, { date, time, result: result.result });
+            console.log(`Processing result ${index + 1}:`, { date, time, closestInterval, result: result.result });
             
             if (!resultsByDateAndTime[date]) {
               resultsByDateAndTime[date] = {};
             }
-            resultsByDateAndTime[date][time] = result.result;
+            // Use closest interval as key, but if multiple results map to same interval, keep the most recent
+            if (!resultsByDateAndTime[date][closestInterval]) {
+              resultsByDateAndTime[date][closestInterval] = result.result;
+            }
           });
 
           console.log('Results grouped by date and time:', resultsByDateAndTime);
@@ -177,17 +221,19 @@ export default function ResultsPage() {
           // Generate all dates in the range (not just dates with results)
           const allDates: string[] = [];
           if (currentDateRange) {
-            const startDate = new Date(currentDateRange.start);
-            const endDate = new Date(currentDateRange.end);
+            // Parse dates in YYYY-MM-DD format and create dates in IST timezone
+            const [startYear, startMonth, startDay] = currentDateRange.start.split('-').map(Number);
+            const [endYear, endMonth, endDay] = currentDateRange.end.split('-').map(Number);
+            
+            const startDate = new Date(startYear, startMonth - 1, startDay);
+            const endDate = new Date(endYear, endMonth - 1, endDay);
             
             for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-              // Format date to match backend format (DD-MM-YYYY) using IST timezone
-              const istDate = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-              const formattedDate = istDate.toLocaleDateString('en-GB', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-              }).replace(/\//g, '-');
+              // Format date to match backend format (DD-MM-YYYY)
+              const year = d.getFullYear();
+              const month = String(d.getMonth() + 1).padStart(2, '0');
+              const day = String(d.getDate()).padStart(2, '0');
+              const formattedDate = `${day}-${month}-${year}`;
               allDates.push(formattedDate);
             }
             
@@ -331,7 +377,12 @@ export default function ResultsPage() {
 
 
 
-          {/* Title and Filter Section - Full Width */}
+          {/* Result, Timer, and Play Now Button - Horizontal Layout at Top */}
+          <div className="mb-4 sm:mb-6">
+            <ResultPanel isRmPlayNow={false} onLoginClick={() => setLoginOpen(true)} showOnlyResult={false} showOnlyTimer={false} />
+          </div>
+
+          {/* Result Chart Heading - Above Calendar Buttons */}
           <div className="mb-4 sm:mb-6 flex justify-between items-center flex-wrap gap-2">
             <h1
               className="text-white font-bold text-xl sm:text-2xl"
@@ -344,21 +395,7 @@ export default function ResultsPage() {
             >
               Result Chart
             </h1>
-            {/* <button
-              onClick={() => window.location.href = '/game'}
-              className="bg-[#FFCD01] hidden hover:bg-yellow-500 text-black font-bold py-3 px-6 rounded-lg transition-colors cursor-pointer"
-              style={{
-                fontFamily: 'Poppins, sans-serif',
-                fontWeight: 600,
-                fontSize: '16px',
-                lineHeight: '20px',
-              }}
-            >
-              Play Now
-            </button> */}
           </div>
-
-
 
           {/* Date Range Picker - Full Width */}
           <div className="mb-4 flex flex-wrap gap-2 items-center">
@@ -401,17 +438,14 @@ export default function ResultsPage() {
             onDateRangeSelect={handleDateRangeSelect}
           />
 
-          {/* Chart Table and Result Panel - Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
-
-            {/* Left Column - Result Chart Table (3/4 width) */}
-            <div className="lg:col-span-3 w-full">
+          {/* Chart Table - Full Width */}
+          <div className="w-full">
               <div className="w-full bg-white rounded-lg sm:rounded-xl shadow-2xl overflow-hidden border border-gray-200">
                 {isLoading ? (
                   <div className="h-96 flex items-center justify-center">
                     <div className="text-gray-600 text-lg font-medium">Loading results...</div>
                   </div>
-                ) : chartData.length === 0 || dateColumns.length === 0 ? (
+                ) : (!chartData || chartData.length === 0 || !dateColumns || dateColumns.length === 0) ? (
                   <div className="h-96 md:h-[32rem] xl:h-[40rem] flex flex-col items-center justify-center p-8">
                     <div className="text-center">
                       <div className="text-6xl mb-4">📅</div>
@@ -580,13 +614,6 @@ export default function ResultsPage() {
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* Right Column - Result Display and Game Timer (1/4 width) */}
-            <div className="lg:col-span-1 w-full">
-              <ResultPanel isRmPlayNow={false} onLoginClick={() => { }} />
-            
-            </div>
           </div>
         </div>
       </main>

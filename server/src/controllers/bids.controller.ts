@@ -72,7 +72,8 @@ export async function placeBid(req: AuthRequest, res: Response) {
     const cardBids = [];
     let totalAmount = 0;
     
-    console.log(`🔍 Bid placement debug - User: ${userId}, Initial balance: ${wallet.main}`);
+    const totalBalance = wallet.main + wallet.bonus;
+    console.log(`🔍 Bid placement debug - User: ${userId}, Main balance: ${wallet.main}, Bonus balance: ${wallet.bonus}, Total balance: ${totalBalance}`);
     
     for (const bid of bids) {
       if (!Types.ObjectId.isValid(bid.cardId)) {
@@ -98,12 +99,14 @@ export async function placeBid(req: AuthRequest, res: Response) {
     
     console.log(`🔍 Total amount calculated: ${totalAmount}`);
     
-    // Check if user has sufficient balance
-    if (wallet.main < totalAmount) {
+    // Check if user has sufficient balance (main + bonus)
+    if (totalBalance < totalAmount) {
       return res.status(400).json({ 
         error: 'Insufficient balance', 
         required: totalAmount, 
-        available: wallet.main 
+        available: totalBalance,
+        main: wallet.main,
+        bonus: wallet.bonus
       });
     }
     
@@ -128,22 +131,57 @@ export async function placeBid(req: AuthRequest, res: Response) {
       await CardService.updateCardStats(cardBid.card.name, cardBid.bidAmount);
     }
     
-    // Update wallet within transaction
-    console.log(`🔍 Before wallet update - Balance: ${wallet.main}, Deducting: ${totalAmount}`);
-    wallet.main -= totalAmount;
-    await wallet.save({ session });
-    console.log(`🔍 After wallet update - New balance: ${wallet.main}`);
+    // Update wallet within transaction - deduct from main first, then bonus if needed
+    console.log(`🔍 Before wallet update - Main: ${wallet.main}, Bonus: ${wallet.bonus}, Deducting: ${totalAmount}`);
     
-    // Log wallet transaction for bid deduction within transaction
-    await WalletTransaction.create([{
-      user: userId,
-      initiator: userId,
-      initiatorRole: 'system',
-      amount: totalAmount,
-      walletType: 'main',
-      type: 'debit',
-      note: `Bid placement for game ${gameId} - ${bids.length} cards, total amount: ₹${totalAmount}`
-    }], { session });
+    let mainDeduction = 0;
+    let bonusDeduction = 0;
+    
+    if (wallet.main >= totalAmount) {
+      // Deduct entirely from main wallet
+      mainDeduction = totalAmount;
+      wallet.main -= totalAmount;
+    } else {
+      // Deduct from main first, then from bonus
+      mainDeduction = wallet.main;
+      bonusDeduction = totalAmount - wallet.main;
+      wallet.main = 0;
+      wallet.bonus -= bonusDeduction;
+    }
+    
+    await wallet.save({ session });
+    console.log(`🔍 After wallet update - Main: ${wallet.main}, Bonus: ${wallet.bonus}`);
+    
+    // Log wallet transactions for bid deduction within transaction
+    const transactions = [];
+    
+    if (mainDeduction > 0) {
+      transactions.push({
+        user: userId,
+        initiator: userId,
+        initiatorRole: 'system',
+        amount: mainDeduction,
+        walletType: 'main',
+        type: 'debit',
+        note: `Bid placement for game ${gameId} - ${bids.length} cards, amount: ₹${mainDeduction} (from main wallet)`
+      });
+    }
+    
+    if (bonusDeduction > 0) {
+      transactions.push({
+        user: userId,
+        initiator: userId,
+        initiatorRole: 'system',
+        amount: bonusDeduction,
+        walletType: 'bonus',
+        type: 'debit',
+        note: `Bid placement for game ${gameId} - ${bids.length} cards, amount: ₹${bonusDeduction} (from bonus wallet)`
+      });
+    }
+    
+    if (transactions.length > 0) {
+      await WalletTransaction.create(transactions, { session, ordered: true });
+    }
     
     // Update game pool within transaction
     game.totalPool += totalAmount;
@@ -156,7 +194,9 @@ export async function placeBid(req: AuthRequest, res: Response) {
       message: 'Bids placed successfully', 
       bids: createdBids,
       totalAmount,
-      newBalance: wallet.main,
+      newBalance: wallet.main + wallet.bonus,
+      newMainBalance: wallet.main,
+      newBonusBalance: wallet.bonus,
       totalPool: game.totalPool
     });
   } catch (error: any) {
@@ -180,9 +220,11 @@ export async function listUserBids(req: AuthRequest, res: Response) {
     if (role === 'user') {
       filter.user = userId;
     } else if (role === 'agent') {
-      // Find all users assigned to this agent
-      const users = await User.find({ assignedAgent: userId }).select('_id');
-      const userIds = users.map(u => u._id);
+      // Find all users assigned to this agent, plus the agent's own bids
+      const users = await User.find({ assignedAgent: userId }).select('_id').lean();
+      const userIds = users.map((u: any) => u._id);
+      // Include agent's own userId in the list
+      userIds.push(userId);
       filter.user = { $in: userIds };
     }
     // Admin can see all
@@ -210,9 +252,11 @@ export async function getOngoingBids(req: AuthRequest, res: Response) {
     if (role === 'user') {
       filter.user = userId;
     } else if (role === 'agent') {
-      // Find all users assigned to this agent
-      const users = await User.find({ assignedAgent: userId }).select('_id');
-      const userIds = users.map(u => u._id);
+      // Find all users assigned to this agent, plus the agent's own bids
+      const users = await User.find({ assignedAgent: userId }).select('_id').lean();
+      const userIds = users.map((u: any) => u._id);
+      // Include agent's own userId in the list
+      userIds.push(userId);
       filter.user = { $in: userIds };
     }
     // Admin can see all ongoing bids
@@ -254,9 +298,11 @@ export async function getOpenGameBids(req: AuthRequest, res: Response) {
     if (role === 'user') {
       filter.user = userId;
     } else if (role === 'agent') {
-      // Find all users assigned to this agent
-      const users = await User.find({ assignedAgent: userId }).select('_id');
-      const userIds = users.map(u => u._id);
+      // Find all users assigned to this agent, plus the agent's own bids
+      const users = await User.find({ assignedAgent: userId }).select('_id').lean();
+      const userIds = users.map((u: any) => u._id);
+      // Include agent's own userId in the list
+      userIds.push(userId);
       filter.user = { $in: userIds };
     }
     // Admin can see all ongoing bids
@@ -380,14 +426,17 @@ export async function placeSimpleBid(req: AuthRequest, res: Response) {
       return res.status(400).json({ error: 'Wallet not found' });
     }
     
-    console.log(`🔍 Simple bid debug - User: ${userId}, Card: ${cardName}, Amount: ${amount}, Current balance: ${wallet.main}`);
+    const totalBalance = wallet.main + wallet.bonus;
+    console.log(`🔍 Simple bid debug - User: ${userId}, Card: ${cardName}, Amount: ${amount}, Main balance: ${wallet.main}, Bonus balance: ${wallet.bonus}, Total balance: ${totalBalance}`);
     
-    // Check if user has sufficient balance
-    if (wallet.main < amount) {
+    // Check if user has sufficient balance (main + bonus)
+    if (totalBalance < amount) {
       return res.status(400).json({ 
         error: 'Insufficient balance', 
         required: amount, 
-        available: wallet.main 
+        available: totalBalance,
+        main: wallet.main,
+        bonus: wallet.bonus
       });
     }
     
@@ -420,22 +469,51 @@ export async function placeSimpleBid(req: AuthRequest, res: Response) {
       cardPrice: amount
     });
     
-    // Deduct amount from wallet
-    console.log(`🔍 Before simple bid wallet update - Balance: ${wallet.main}, Deducting: ${amount}`);
-    wallet.main -= amount;
-    await wallet.save();
-    console.log(`🔍 After simple bid wallet update - New balance: ${wallet.main}`);
+    // Deduct amount from wallet - deduct from main first, then bonus if needed
+    console.log(`🔍 Before simple bid wallet update - Main: ${wallet.main}, Bonus: ${wallet.bonus}, Deducting: ${amount}`);
     
-    // Log wallet transaction for bid deduction
-    await WalletTransaction.create({
-      user: userId,
-      initiator: userId,
-      initiatorRole: 'system',
-      amount: amount,
-      walletType: 'main',
-      type: 'debit',
-      note: `Simple bid placement for game ${gameId} - card ${cardName}, amount: ₹${amount}`
-    });
+    let mainDeduction = 0;
+    let bonusDeduction = 0;
+    
+    if (wallet.main >= amount) {
+      // Deduct entirely from main wallet
+      mainDeduction = amount;
+      wallet.main -= amount;
+    } else {
+      // Deduct from main first, then from bonus
+      mainDeduction = wallet.main;
+      bonusDeduction = amount - wallet.main;
+      wallet.main = 0;
+      wallet.bonus -= bonusDeduction;
+    }
+    
+    await wallet.save();
+    console.log(`🔍 After simple bid wallet update - Main: ${wallet.main}, Bonus: ${wallet.bonus}`);
+    
+    // Log wallet transactions for bid deduction
+    if (mainDeduction > 0) {
+      await WalletTransaction.create({
+        user: userId,
+        initiator: userId,
+        initiatorRole: 'system',
+        amount: mainDeduction,
+        walletType: 'main',
+        type: 'debit',
+        note: `Simple bid placement for game ${gameId} - card ${cardName}, amount: ₹${mainDeduction} (from main wallet)`
+      });
+    }
+    
+    if (bonusDeduction > 0) {
+      await WalletTransaction.create({
+        user: userId,
+        initiator: userId,
+        initiatorRole: 'system',
+        amount: bonusDeduction,
+        walletType: 'bonus',
+        type: 'debit',
+        note: `Simple bid placement for game ${gameId} - card ${cardName}, amount: ₹${bonusDeduction} (from bonus wallet)`
+      });
+    }
     
     // Update game pool
     game.totalPool += amount;
@@ -444,7 +522,9 @@ export async function placeSimpleBid(req: AuthRequest, res: Response) {
     res.json({ 
       message: 'Bid placed successfully', 
       bid: bid,
-      newBalance: wallet.main,
+      newBalance: wallet.main + wallet.bonus,
+      newMainBalance: wallet.main,
+      newBonusBalance: wallet.bonus,
       totalPool: game.totalPool
     });
     
