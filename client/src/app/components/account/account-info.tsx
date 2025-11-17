@@ -2,8 +2,13 @@
 import { useAuthStore } from "../../../store/auth-store";
 import { accountPageStyles, textStyles } from "./shared-styles";
 
+interface UserWithPhone {
+  phone?: string;
+}
+
 export function AccountInfoContent() {
   const { user, mainBalance, bonusBalance } = useAuthStore();
+  const userWithPhone = user as (typeof user & UserWithPhone) | null;
 
   const formatIndianRupees = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
@@ -50,7 +55,7 @@ export function AccountInfoContent() {
               <label style={{ ...textStyles.caption, color: '#666666' }}>Phone Number</label>
               <div className="px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
                 <span style={{ ...textStyles.body, color: '#000000', fontWeight: 500 }}>
-                  {(user as any)?.phone || 'N/A'}
+                  {userWithPhone?.phone || 'N/A'}
                 </span>
               </div>
             </div>
