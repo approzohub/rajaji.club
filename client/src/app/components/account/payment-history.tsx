@@ -300,33 +300,17 @@ export function PaymentHistoryContent() {
       <h2 className={accountPageStyles.header.title} style={textStyles.heading}>Payment History</h2>
       <p className={accountPageStyles.header.subtitle} style={textStyles.caption}>Here you can check your deposit & Bidding payment history.</p>
       
-      {/* Fixed Table Header */}
-      <div className={accountPageStyles.table.wrapper}>
-        <table className={accountPageStyles.table.container} style={{ tableLayout: 'fixed', width: '100%' }}>
-          <colgroup>
-            <col style={{ width: '40%' }} />
-            <col style={{ width: '30%' }} />
-            <col style={{ width: '30%' }} />
-          </colgroup>
-          <thead>
-            <tr className={accountPageStyles.table.header}>
-              <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left'}}>Date & Time</th>
-              <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left'}}>Amount</th>
-              <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left'}}>Payment Mode</th>
-            </tr>
-          </thead>
-        </table>
-      </div>
-      
-      {/* Scrollable Table Body */}
+      {/* Scrollable Table with Sticky Header */}
       <div ref={scrollableContainerRef} className="overflow-y-auto max-h-[350px]">
-        <div className={accountPageStyles.table.wrapper}>
-          <table className={accountPageStyles.table.container} style={{ tableLayout: 'fixed', width: '100%' }}>
-            <colgroup>
-              <col style={{ width: '40%' }} />
-              <col style={{ width: '30%' }} />
-              <col style={{ width: '30%' }} />
-            </colgroup>
+        <div className={accountPageStyles.table.wrapper} style={{ overflowX: 'auto' }}>
+          <table className={accountPageStyles.table.container} style={{ minWidth: '600px', width: '100%' }}>
+            <thead className="sticky top-0 z-10">
+              <tr className={accountPageStyles.table.header}>
+                <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left', minWidth: '200px'}}>Date & Time</th>
+                <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left', minWidth: '120px'}}>Amount</th>
+                <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left', minWidth: '150px'}}>Payment Mode</th>
+              </tr>
+            </thead>
             <tbody className={accountPageStyles.table.body}>
               {transactions.length === 0 ? (
                 <tr>
@@ -343,13 +327,13 @@ export function PaymentHistoryContent() {
                   
                   return (
                     <tr key={`${transaction._id}_${idx}`} className={idx % 2 === 0 ? "bg-white" : accountPageStyles.table.alternateRow}>
-                      <td className={`${accountPageStyles.table.cell} whitespace-nowrap`} style={{...accountPageStyles.table.cellText, textAlign: 'left'}}>
+                      <td className={`${accountPageStyles.table.cell} whitespace-nowrap`} style={{...accountPageStyles.table.cellText, textAlign: 'left', minWidth: '200px'}}>
                         {formatDateTime(transaction.createdAt)}
                       </td>
-                      <td className={accountPageStyles.table.cell} style={{...accountPageStyles.table.cellText, color: amountColor, textAlign: 'left'}}>
+                      <td className={accountPageStyles.table.cell} style={{...accountPageStyles.table.cellText, color: amountColor, textAlign: 'left', minWidth: '120px'}}>
                         {amountPrefix}₹{displayAmount}
                       </td>
-                      <td className={accountPageStyles.table.cell} style={{...accountPageStyles.table.cellText, color: '#000000', textAlign: 'left'}}>
+                      <td className={accountPageStyles.table.cell} style={{...accountPageStyles.table.cellText, color: '#000000', textAlign: 'left', minWidth: '150px'}}>
                         {transaction.paymentMode === 'UPI' 
                           ? (transaction.amount > 0 ? 'Deposit' : 'Withdraw')
                           : transaction.paymentMode

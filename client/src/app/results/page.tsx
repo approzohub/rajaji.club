@@ -379,7 +379,7 @@ export default function ResultsPage() {
 
           {/* Result, Timer, and Play Now Button - Horizontal Layout at Top */}
           <div className="mb-4 sm:mb-6">
-            <ResultPanel isRmPlayNow={false} onLoginClick={() => setLoginOpen(true)} showOnlyResult={false} showOnlyTimer={false} />
+            <ResultPanel isRmPlayNow={false} onLoginClick={() => setLoginOpen(true)} showOnlyResult={false} showOnlyTimer={false} horizontalMobileLayout={true} />
           </div>
 
           {/* Result Chart Heading - Above Calendar Buttons */}

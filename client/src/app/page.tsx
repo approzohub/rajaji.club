@@ -123,11 +123,13 @@ export default function Home() {
         <main className="flex flex-col items-center flex-1 w-full p-6 px-4 md:px-8">
           <HeroSection />
           <div className="flex flex-col lg:flex-row md:gap-6 w-full max-w-7xl md:mt-6 mt-0">
-            <div className="flex-1 flex flex-col gap-4 pt-2 md:p-0">
+            <div className="flex flex-col gap-4 pt-2 md:p-0 w-full lg:w-[65%] lg:flex-shrink-0">
               <Banner />
               <ResultTable />
             </div>
-            <ResultPanel onLoginClick={() => setLoginOpen(true)} isRmPlayNow={false} />
+            <div className="w-full lg:w-[35%] lg:flex-shrink-0">
+              <ResultPanel onLoginClick={() => setLoginOpen(true)} isRmPlayNow={false} />
+            </div>
           </div>
           <hr className="w-full border-t border-gray-700 mt-10"  aria-hidden="true" />
           <GameRules />

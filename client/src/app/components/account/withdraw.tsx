@@ -555,7 +555,7 @@ export function WithdrawContent({ onAddUpiClick, onPaymentMethodAdded, onPayment
         </div>
         <div ref={scrollableContainerRef} className="overflow-y-auto max-h-[400px]">
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="w-full">
+            <table className="w-full" style={{ minWidth: '700px' }}>
               <thead className="sticky top-0 z-10">
                 <tr
                   className="text-white text-left"
@@ -564,56 +564,61 @@ export function WithdrawContent({ onAddUpiClick, onPaymentMethodAdded, onPayment
                   }}
                 >
                 <th
-                  className="px-4 py-3 font-bold"
+                  className="px-4 py-3 font-bold whitespace-nowrap"
                   style={{
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 600,
                     fontSize: '16px',
                     fontStyle: 'Semibold',
+                    minWidth: '100px',
                   }}
                 >
                   Amount
                 </th>
                 <th
-                  className="px-4 py-3 font-bold"
+                  className="px-4 py-3 font-bold whitespace-nowrap"
                   style={{
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 600,
                     fontSize: '16px',
                     fontStyle: 'Semibold',
+                    minWidth: '120px',
                   }}
                 >
                   Status
                 </th>
                 <th
-                  className="px-4 py-3 font-bold"
+                  className="px-4 py-3 font-bold whitespace-nowrap"
                   style={{
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 600,
                     fontSize: '16px',
                     fontStyle: 'Semibold',
+                    minWidth: '130px',
                   }}
                 >
                   Account
                 </th>
                 <th
-                  className="px-4 py-3 font-bold"
+                  className="px-4 py-3 font-bold whitespace-nowrap"
                   style={{
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 600,
                     fontSize: '16px',
                     fontStyle: 'Semibold',
+                    minWidth: '180px',
                   }}
                 >
                   Date & Time
                 </th>
                 <th
-                  className="px-4 py-3 font-bold"
+                  className="px-4 py-3 font-bold whitespace-nowrap"
                   style={{
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 600,
                     fontSize: '16px',
                     fontStyle: 'Semibold',
+                    minWidth: '150px',
                   }}
                 >
                   Note
@@ -646,18 +651,19 @@ export function WithdrawContent({ onAddUpiClick, onPaymentMethodAdded, onPayment
                     className={idx % 2 === 0 ? "bg-[#FFFFFF]" : "bg-[#F6F6F6]"}
                   >
                     <td
-                      className="px-4 py-3"
+                      className="px-4 py-3 whitespace-nowrap"
                       style={{
                         fontFamily: 'Poppins, sans-serif',
                         fontWeight: 500,
                         fontStyle: 'Regular',
                         fontSize: '14px',
                         color: '#535353',
+                        minWidth: '100px',
                       }}
                     >
                       ₹{withdrawal.amount}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 whitespace-nowrap" style={{ minWidth: '120px' }}>
                       <span
                         className="px-3 py-1"
                         style={{
@@ -674,13 +680,14 @@ export function WithdrawContent({ onAddUpiClick, onPaymentMethodAdded, onPayment
                       </span>
                     </td>
                     <td
-                      className="px-4 py-3"
+                      className="px-4 py-3 whitespace-nowrap"
                       style={{
                         fontFamily: 'Poppins',
                         fontWeight: 400,
                         fontStyle: 'Regular',
                         fontSize: '14px',
                         color: '#535353',
+                        minWidth: '130px',
                       }}
                     >
                       {withdrawal.walletType === 'main' ? 'Main Wallet' : 'Bonus Wallet'}
@@ -693,6 +700,7 @@ export function WithdrawContent({ onAddUpiClick, onPaymentMethodAdded, onPayment
                         fontStyle: 'Regular',
                         fontSize: '14px',
                         color: '#535353',
+                        minWidth: '180px',
                       }}
                     >
                       {formatDateTime(withdrawal.createdAt)}
@@ -705,6 +713,7 @@ export function WithdrawContent({ onAddUpiClick, onPaymentMethodAdded, onPayment
                         fontStyle: 'Regular',
                         fontSize: '14px',
                         color: '#535353',
+                        minWidth: '150px',
                       }}
                     >
                       {withdrawal.note ? (

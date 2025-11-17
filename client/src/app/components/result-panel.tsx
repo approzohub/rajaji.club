@@ -15,12 +15,14 @@ export function ResultPanel({
   isRmPlayNow = false, 
   onLoginClick,
   showOnlyResult = false,
-  showOnlyTimer = false
+  showOnlyTimer = false,
+  horizontalMobileLayout = false
 }: { 
   isRmPlayNow?: boolean; 
   onLoginClick?: () => void;
   showOnlyResult?: boolean;
   showOnlyTimer?: boolean;
+  horizontalMobileLayout?: boolean;
 }) {
   const router = useRouter();
   const { isLoggedIn } = useAuthStore();
@@ -175,11 +177,11 @@ export function ResultPanel({
 
   return (
     <>
-      {/* Desktop View - Horizontal Layout for Results Page */}
-      <aside className={`hidden md:flex w-full mt-2 flex-row gap-4 rounded-2xl p-0 items-stretch`} aria-label="Result Panel" style={{ flexWrap: 'nowrap' }}>
+      {/* Desktop View - Vertical Layout */}
+      <aside className={`hidden md:flex w-full mt-2 flex-col gap-4 rounded-2xl p-0`} aria-label="Result Panel">
         {/* Result Card - Show if not showOnlyTimer */}
         {!showOnlyTimer && (
-        <div className="bg-white rounded-lg shadow-lg flex items-center justify-between px-4 sm:px-6 flex-1 shrink-0" style={{ minHeight: 81, marginBottom: 0 }}>
+        <div className="bg-white rounded-lg shadow-lg flex items-center justify-between px-4 sm:px-6 w-full" style={{ minHeight: 81, marginBottom: 0 }}>
           <div className="flex flex-col items-start justify-center gap-0.5">
             <span
               className="text-black font-normal"
@@ -267,8 +269,8 @@ export function ResultPanel({
 
         {/* Game Timer with Connection Status - Show if not showOnlyResult */}
         {!showOnlyResult && (
-        <div className="relative flex-1 shrink-0">
-          <div className={`rounded-lg flex flex-col items-center justify-center px-4 sm:px-6 p-2 w-full h-full relative overflow-visible ${timerData.isBreak ? 'bg-orange-500' : 'bg-[#16c25f]'}`} style={{ minHeight: 81 }}>
+        <div className="relative w-full">
+          <div className={`rounded-lg flex flex-col items-center justify-center px-4 sm:px-6 p-2 w-full relative overflow-visible ${timerData.isBreak ? 'bg-orange-500' : 'bg-[#16c25f]'}`} style={{ minHeight: 81 }}>
             <div className="w-full flex items-center justify-center relative">
               <span
                 className="text-white font-bold text-center mx-auto"
@@ -312,7 +314,7 @@ export function ResultPanel({
               backgroundColor: '#FFCD01',
             }}
             onClick={handlePlayNow}
-            className={`hidden md:block text-black font-bold py-4 rounded shadow-lg text-xl sm:text-2xl flex-1 shrink-0 cursor-pointer ${
+            className={`hidden md:block text-black font-bold py-4 rounded shadow-lg text-xl sm:text-2xl w-full cursor-pointer ${
               timerData.gameStatus === 'open' && !timerData.isBreak && timerData.activeGameId ? 'hover:bg-yellow-500' : 'cursor-not-allowed'
             }`}
             aria-label="Play Now"
@@ -335,10 +337,10 @@ export function ResultPanel({
       </aside>
 
       {/* Mobile View - Hidden on desktop */}
-      <aside className={`md:hidden w-full ${showOnlyResult || showOnlyTimer ? '' : 'flex flex-col gap-3'} ${showOnlyResult || showOnlyTimer ? '' : 'mt-2'}`} aria-label="Mobile Result Panel">
+      <aside className={`md:hidden w-full ${showOnlyResult || showOnlyTimer ? '' : horizontalMobileLayout ? 'flex flex-row gap-3 items-stretch' : 'flex flex-col gap-3'} ${showOnlyResult || showOnlyTimer ? '' : 'mt-2'}`} aria-label="Mobile Result Panel" style={horizontalMobileLayout && !showOnlyResult && !showOnlyTimer ? { flexWrap: 'nowrap' } : {}}>
         {/* Result Card - Mobile */}
         {!showOnlyTimer && (
-        <div className={`bg-white ${showOnlyResult ? '' : 'rounded-lg'} shadow-lg flex items-center justify-between ${showOnlyResult ? 'px-3 py-2' : 'px-4 py-4'} w-full`} style={{ minHeight: 70, height: 70 }}>
+        <div className={`bg-white ${showOnlyResult ? '' : 'rounded-lg'} shadow-lg flex items-center justify-between ${showOnlyResult ? 'px-3 py-2' : 'px-4 py-4'} ${horizontalMobileLayout && !showOnlyResult ? 'flex-1 shrink-0' : 'w-full'}`} style={{ minHeight: 70, height: 70 }}>
           <div className="flex flex-col items-start justify-center">
             <span
               className={`text-black font-semibold ${showOnlyResult ? 'text-[14px]' : 'text-[22px]'} leading-tight tracking-[0%]`}
@@ -395,7 +397,7 @@ export function ResultPanel({
 
         {/* Game Timer - Mobile */}
         {!showOnlyResult && (
-        <div className={`${showOnlyTimer ? '' : 'rounded-lg'} flex items-center justify-between ${showOnlyTimer ? 'px-3 py-2' : 'px-4 py-4'} w-full ${timerData.isBreak ? 'bg-orange-500' : 'bg-[#16c25f]'}`} style={{ minHeight: 70, height: 70 }}>
+        <div className={`${showOnlyTimer ? '' : 'rounded-lg'} flex items-center justify-between ${showOnlyTimer ? 'px-3 py-2' : 'px-4 py-4'} ${horizontalMobileLayout && !showOnlyTimer ? 'flex-1 shrink-0' : 'w-full'} ${timerData.isBreak ? 'bg-orange-500' : 'bg-[#16c25f]'}`} style={{ minHeight: 70, height: 70 }}>
           <span
             className={`text-white font-normal ${showOnlyTimer ? 'text-[12px]' : 'text-[22px]'} leading-tight tracking-[0%]`}
             style={{

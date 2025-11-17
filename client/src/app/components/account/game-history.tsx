@@ -372,33 +372,17 @@ export const GameHistoryContent = React.memo(function GameHistoryContent() {
         You can check all your game history here.
       </div>
       
-      {/* Fixed Table Header */}
-      <div className={accountPageStyles.table.wrapper}>
-        <table className={accountPageStyles.table.container} style={{ tableLayout: 'fixed', width: '100%' }}>
-          <colgroup>
-            <col style={{ width: '35%' }} />
-            <col style={{ width: '45%' }} />
-            <col style={{ width: '20%' }} />
-          </colgroup>
-          <thead>
-            <tr className={accountPageStyles.table.header}>
-              <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left'}}>Date & Time</th>
-              <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left'}}>Bid</th>
-              <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left'}}>Result</th>
-            </tr>
-          </thead>
-        </table>
-      </div>
-      
-      {/* Scrollable Table Body */}
+      {/* Scrollable Table with Sticky Header */}
       <div ref={scrollableContainerRef} className="overflow-y-auto max-h-[350px]">
-        <div className={accountPageStyles.table.wrapper}>
-          <table className={accountPageStyles.table.container} style={{ tableLayout: 'fixed', width: '100%' }}>
-            <colgroup>
-              <col style={{ width: '35%' }} />
-              <col style={{ width: '45%' }} />
-              <col style={{ width: '20%' }} />
-            </colgroup>
+        <div className={accountPageStyles.table.wrapper} style={{ overflowX: 'auto' }}>
+          <table className={accountPageStyles.table.container} style={{ minWidth: '600px', width: '100%' }}>
+            <thead className="sticky top-0 z-10">
+              <tr className={accountPageStyles.table.header}>
+                <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left', minWidth: '180px'}}>Date & Time</th>
+                <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left', minWidth: '250px'}}>Bid</th>
+                <th className={accountPageStyles.table.headerCell} style={{...accountPageStyles.table.headerText, textAlign: 'left', minWidth: '100px'}}>Result</th>
+              </tr>
+            </thead>
             <tbody className={accountPageStyles.table.body}>
               {history.length === 0 ? (
                 <tr>
@@ -409,10 +393,10 @@ export const GameHistoryContent = React.memo(function GameHistoryContent() {
               ) : (
                 history.map((row, idx) => (
                   <tr key={idx} className={idx % 2 === 0 ? "bg-white" : accountPageStyles.table.alternateRow}>
-                    <td className={`${accountPageStyles.table.cell} whitespace-nowrap`} style={{...accountPageStyles.table.cellText, textAlign: 'left'}}>
+                    <td className={`${accountPageStyles.table.cell} whitespace-nowrap`} style={{...accountPageStyles.table.cellText, textAlign: 'left', minWidth: '180px'}}>
                       {row.date} - {row.time}
                     </td>
-                    <td className={accountPageStyles.table.cell} style={{...accountPageStyles.table.cellText, color: '#000000', textAlign: 'left'}}>
+                    <td className={accountPageStyles.table.cell} style={{...accountPageStyles.table.cellText, color: '#000000', textAlign: 'left', minWidth: '250px'}}>
                       <div className="flex flex-row items-center gap-x-1 justify-start">
                         <span className="whitespace-nowrap" style={{...accountPageStyles.table.cellText, color: '#000000'}}>{row.bid.value}</span>
                         <span className="flex-none p-1 flex items-center min-w-[20px]">
@@ -421,7 +405,7 @@ export const GameHistoryContent = React.memo(function GameHistoryContent() {
                         <span className="whitespace-nowrap" style={accountPageStyles.table.cellText}>X {row.bid.count} = ₹{row.bid.amount}</span>
                       </div>
                     </td>
-                    <td className={accountPageStyles.table.cell} style={{...accountPageStyles.table.cellText, textAlign: 'left'}}>
+                    <td className={accountPageStyles.table.cell} style={{...accountPageStyles.table.cellText, textAlign: 'left', minWidth: '100px'}}>
                       <span className={
                         row.result === "Win" ? "text-[#02C060]" : 
                         row.result === "Loss" ? "text-[#C23331]" : 
