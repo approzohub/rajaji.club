@@ -106,39 +106,58 @@ export default function ResultsPage() {
 
 
   const fetchResultsByDateRange = async () => {
+    // Clear previous data immediately when fetching new data - use functional updates to ensure clearing
+    setChartData(() => []);
+    setDateColumns(() => []);
     setIsLoading(true);
-    // Clear previous data immediately when fetching new data
-    setChartData([]);
-    setDateColumns([]);
     
     try {
       let response;
       
-      if (currentDateRange) {
-        // Fetch results for specific date range
-        console.log('Fetching results for date range:', currentDateRange);
-        response = await apiClient.getResultsByDateRange(currentDateRange.start, currentDateRange.end);
-      } else {
+      if (!currentDateRange) {
         // This should not happen since we set default date range
         console.log('No date range selected - this should not happen');
-        setChartData([]);
-        setDateColumns([]);
+        setChartData(() => []);
+        setDateColumns(() => []);
         setIsLoading(false);
         return;
       }
+      
+      // Fetch results for specific date range
+      console.log('Fetching results for date range:', currentDateRange);
+      response = await apiClient.getResultsByDateRange(currentDateRange.start, currentDateRange.end);
 
       console.log('Raw API response:', response);
       console.log('Response data type:', typeof response.data);
       console.log('Response data length:', Array.isArray(response.data) ? response.data.length : 'Not an array');
 
-      if (response.data && Array.isArray(response.data)) {
-        // Handle date range results
-        const results = response.data as Array<{ time: string; result: string; date: string }>;
-        console.log('Results received:', results.length, 'results');
-        console.log('Full response data:', response.data);
-        console.log('Sample results:', results.slice(0, 3));
-        
-        if (results.length > 0) {
+      // Check if response data exists and is an array
+      if (!response.data || !Array.isArray(response.data)) {
+        console.log('No data in response or data is not an array');
+        console.log('Response data:', response.data);
+        setChartData(() => []);
+        setDateColumns(() => []);
+        setIsLoading(false);
+        return;
+      }
+
+      // Handle date range results
+      const results = response.data as Array<{ time: string; result: string; date: string }>;
+      console.log('Results received:', results.length, 'results');
+      console.log('Full response data:', response.data);
+      
+      // If no results, clear data and show empty state immediately
+      if (results.length === 0) {
+        console.log('No results found for the selected date range - clearing all data');
+        // Explicitly clear all state to ensure UI updates
+        setChartData(() => []);
+        setDateColumns(() => []);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Process results only if we have data
+      if (results.length > 0) {
           // Create time intervals based on configured slot interval (default 10 minutes)
           const timeIntervals: string[] = [];
           const minutesInDay = 24 * 60;
@@ -190,35 +209,7 @@ export default function ResultsPage() {
             });
           };
 
-          // Group results by date and time (matching to closest time interval)
-          const resultsByDateAndTime: { [date: string]: { [time: string]: string } } = {};
-          
-          console.log('Processing results:', results.length, 'results');
-          console.log('Sample results:', results.slice(0, 3));
-          
-          results.forEach((result, index) => {
-            const date = result.date;
-            const time = result.time;
-            const closestInterval = findClosestTimeInterval(time);
-            
-            console.log(`Processing result ${index + 1}:`, { date, time, closestInterval, result: result.result });
-            
-            if (!resultsByDateAndTime[date]) {
-              resultsByDateAndTime[date] = {};
-            }
-            // Use closest interval as key, but if multiple results map to same interval, keep the most recent
-            if (!resultsByDateAndTime[date][closestInterval]) {
-              resultsByDateAndTime[date][closestInterval] = result.result;
-            }
-          });
-
-          console.log('Results grouped by date and time:', resultsByDateAndTime);
-
-          // Get unique dates and sort them
-          const dates = Object.keys(resultsByDateAndTime).sort();
-          console.log('Unique dates with results:', dates);
-          
-          // Generate all dates in the range (not just dates with results)
+          // Generate all dates in the range first (to filter results)
           const allDates: string[] = [];
           if (currentDateRange) {
             // Parse dates in YYYY-MM-DD format and create dates in IST timezone
@@ -269,6 +260,41 @@ export default function ResultsPage() {
           
           console.log('All dates in range:', allDates);
           
+          // Filter results to only include dates within the selected range
+          const filteredResults = results.filter(result => {
+            return allDates.includes(result.date);
+          });
+          
+          console.log('Filtered results (only dates in range):', filteredResults.length, 'out of', results.length);
+          
+          // Group results by date and time (matching to closest time interval)
+          const resultsByDateAndTime: { [date: string]: { [time: string]: string } } = {};
+          
+          console.log('Processing filtered results:', filteredResults.length, 'results');
+          console.log('Sample filtered results:', filteredResults.slice(0, 3));
+          
+          filteredResults.forEach((result, index) => {
+            const date = result.date;
+            const time = result.time;
+            const closestInterval = findClosestTimeInterval(time);
+            
+            console.log(`Processing result ${index + 1}:`, { date, time, closestInterval, result: result.result });
+            
+            if (!resultsByDateAndTime[date]) {
+              resultsByDateAndTime[date] = {};
+            }
+            // Use closest interval as key, but if multiple results map to same interval, keep the most recent
+            if (!resultsByDateAndTime[date][closestInterval]) {
+              resultsByDateAndTime[date][closestInterval] = result.result;
+            }
+          });
+
+          console.log('Results grouped by date and time:', resultsByDateAndTime);
+
+          // Get unique dates and sort them
+          const dates = Object.keys(resultsByDateAndTime).sort();
+          console.log('Unique dates with results:', dates);
+          
           // Create table data structure
           const tableData = timeIntervals.map(timeInterval => {
             const row: { time: string; results: string[] } = {
@@ -301,21 +327,11 @@ export default function ResultsPage() {
             sampleTableData: tableData.slice(0, 3),
             currentDateRange
           });
-        } else {
-          console.log('No results found for the selected date range');
-          setChartData([]);
-          setDateColumns([]);
         }
-      } else {
-        console.log('No data in response or data is not an array');
-        console.log('Response data:', response.data);
-        setChartData([]);
-        setDateColumns([]);
-      }
     } catch (error) {
       console.error('Error fetching results:', error);
-      setChartData([]);
-      setDateColumns([]);
+      setChartData(() => []);
+      setDateColumns(() => []);
     } finally {
       setIsLoading(false);
     }
@@ -323,7 +339,7 @@ export default function ResultsPage() {
 
   const handleDateRangeSelect = (start: string, end: string) => {
     setCurrentDateRange({ start, end });
-    fetchResultsByDateRange();
+    // fetchResultsByDateRange will be called automatically via useEffect when currentDateRange changes
     setShowDatePicker(false);
   };
 
@@ -379,7 +395,7 @@ export default function ResultsPage() {
 
           {/* Result, Timer, and Play Now Button - Horizontal Layout at Top */}
           <div className="mb-4 sm:mb-6">
-            <ResultPanel isRmPlayNow={false} onLoginClick={() => setLoginOpen(true)} showOnlyResult={false} showOnlyTimer={false} horizontalMobileLayout={true} />
+            <ResultPanel isRmPlayNow={false} onLoginClick={() => setLoginOpen(true)} showOnlyResult={false} showOnlyTimer={false} horizontalMobileLayout={true} horizontalDesktopLayout={true} />
           </div>
 
           {/* Result Chart Heading - Above Calendar Buttons */}
