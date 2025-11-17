@@ -7,7 +7,8 @@ import {
   GameHistoryContent,
   PaymentHistoryContent,
   WithdrawContent,
-  AddUpiModal
+  AddUpiModal,
+  AccountInfoContent
 } from "../components/account";
 import { AccountHeader } from "../components/account-header";
 import { Footer } from "../components/footer";
@@ -22,6 +23,7 @@ import { apiClient } from "../../lib/api";
 import { setPageTitle, PAGE_TITLES } from "../../lib/page-title";
 
 const menuItems = [
+  { label: "Account" },
   { label: "Ongoing Bids" },
   { label: "Withdraw" },
   { label: "Game History" },
@@ -30,7 +32,7 @@ const menuItems = [
 ];
 
 export function AccountPageClient() {
-  const [activeMenu, setActiveMenu] = useState("Ongoing Bids");
+  const [activeMenu, setActiveMenu] = useState("Account");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -78,6 +80,9 @@ export function AccountPageClient() {
   useEffect(() => {
     let title: string = PAGE_TITLES.ACCOUNT;
     switch (activeMenu) {
+      case "Account":
+        title = PAGE_TITLES.ACCOUNT;
+        break;
       case PAGE_TITLES.ACCOUNT_MY_ACCOUNT:
         title = PAGE_TITLES.ACCOUNT_MY_ACCOUNT;
         break;
@@ -226,7 +231,9 @@ export function AccountPageClient() {
   }
 
   let mainContent;
-  if (activeMenu === "Change Password") {
+  if (activeMenu === "Account") {
+    mainContent = <AccountInfoContent />;
+  } else if (activeMenu === "Change Password") {
     mainContent = (
       <AccountFormContent
         showPassword={showPassword}
@@ -255,8 +262,8 @@ export function AccountPageClient() {
   } else if (activeMenu === "Payment History") {
     mainContent = <PaymentHistoryContent />;
   } else {
-    // Default to Ongoing Bids if no menu is selected
-    mainContent = <OngoingBidsContent />;
+    // Default to Account if no menu is selected
+    mainContent = <AccountInfoContent />;
   }
 
   return (

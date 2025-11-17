@@ -17,6 +17,7 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
+  { label: "Account" },
   { label: "Ongoing Bids" },
   { label: "Withdraw" },
   { label: "Game History" },
