@@ -112,8 +112,6 @@ export default function ResultsPage() {
     setIsLoading(true);
     
     try {
-      let response;
-      
       if (!currentDateRange) {
         // This should not happen since we set default date range
         console.log('No date range selected - this should not happen');
@@ -125,7 +123,7 @@ export default function ResultsPage() {
       
       // Fetch results for specific date range
       console.log('Fetching results for date range:', currentDateRange);
-      response = await apiClient.getResultsByDateRange(currentDateRange.start, currentDateRange.end);
+      const response = await apiClient.getResultsByDateRange(currentDateRange.start, currentDateRange.end);
 
       console.log('Raw API response:', response);
       console.log('Response data type:', typeof response.data);
