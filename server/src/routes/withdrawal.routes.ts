@@ -38,7 +38,7 @@ const router = Router();
  *       201: { description: Withdrawal requested }
  *       400: { description: Invalid input or insufficient balance }
  */
-router.post('/withdraw', jwtAuth, requireRole('user'), requestWithdrawal);
+router.post('/withdraw', jwtAuth, requireRole('user', 'agent'), requestWithdrawal);
 
 /**
  * @swagger

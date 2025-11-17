@@ -21,7 +21,7 @@ const approveRejectSchema = z.object({
 
 export async function requestWithdrawal(req: AuthRequest, res: Response) {
   const { id: userId, role } = req.user || {};
-  if (!userId || role !== 'user') return res.status(403).json({ error: 'Forbidden' });
+  if (!userId || (role !== 'user' && role !== 'agent')) return res.status(403).json({ error: 'Forbidden' });
   const parse = requestSchema.safeParse(req.body);
   if (!parse.success) return res.status(400).json({ error: 'Invalid input' });
   const { amount, walletType, note, paymentMethodId } = parse.data;
