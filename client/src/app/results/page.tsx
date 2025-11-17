@@ -385,14 +385,17 @@ export default function ResultsPage() {
     }}>
       <Header balance={balance} onLoginClick={() => setLoginOpen(true)} />
 
+      {/* Result, Timer, and Play Now Button - Mobile: Outside container, Desktop: Inside container */}
+      <div className="w-full md:hidden">
+        <ResultPanel isRmPlayNow={false} onLoginClick={() => setLoginOpen(true)} showOnlyResult={false} showOnlyTimer={false} horizontalMobileLayout={true} horizontalDesktopLayout={true} />
+      </div>
+
       {/* Main Content - Two Column Layout */}
       <main className="flex-1 w-full px-4 sm:px-6 pt-4 pb-20 md:pb-6">
         <div className="max-w-7xl mx-auto w-full">
 
-
-
-          {/* Result, Timer, and Play Now Button - Horizontal Layout at Top */}
-          <div className="mb-4 sm:mb-6">
+          {/* Result, Timer, and Play Now Button - Desktop: Inside container */}
+          <div className="hidden md:block mb-4 sm:mb-6">
             <ResultPanel isRmPlayNow={false} onLoginClick={() => setLoginOpen(true)} showOnlyResult={false} showOnlyTimer={false} horizontalMobileLayout={true} horizontalDesktopLayout={true} />
           </div>
 

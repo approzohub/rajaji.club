@@ -339,34 +339,34 @@ export function ResultPanel({
       </aside>
 
       {/* Mobile View - Hidden on desktop */}
-      <aside className={`md:hidden w-full ${showOnlyResult || showOnlyTimer ? '' : horizontalMobileLayout ? 'flex flex-row gap-2 sm:gap-3 items-stretch' : 'flex flex-col gap-2 sm:gap-3'} ${showOnlyResult || showOnlyTimer ? '' : 'mt-2'}`} aria-label="Mobile Result Panel" style={horizontalMobileLayout && !showOnlyResult && !showOnlyTimer ? { flexWrap: 'nowrap' } : {}}>
+      <aside className={`md:hidden w-full ${showOnlyResult || showOnlyTimer ? '' : horizontalMobileLayout ? 'flex flex-row items-stretch' : 'flex flex-col'} ${showOnlyResult || showOnlyTimer ? '' : ''}`} aria-label="Mobile Result Panel" style={horizontalMobileLayout && !showOnlyResult && !showOnlyTimer ? { flexWrap: 'nowrap', gap: 0, margin: 0, padding: 0 } : { margin: 0, padding: 0 }}>
         {/* Result Card - Mobile */}
         {!showOnlyTimer && (
-        <div className={`bg-white ${showOnlyResult ? '' : 'rounded-lg'} shadow-lg flex items-center justify-between ${showOnlyResult ? 'px-2 py-1.5 sm:px-3 sm:py-2' : 'px-3 py-3 sm:px-4 sm:py-4'} ${horizontalMobileLayout && !showOnlyResult ? 'flex-1 shrink-0 min-w-0' : 'w-full'}`} style={{ minHeight: '60px', height: 'auto' }}>
-          <div className="flex flex-col items-start justify-center min-w-0 flex-1">
+        <div className={`bg-white flex items-center justify-between ${horizontalMobileLayout && !showOnlyResult ? 'flex-1 shrink-0 min-w-0' : 'w-full'}`} style={{ minHeight: '60px', height: 'auto', paddingLeft: 0, paddingRight: 0, marginLeft: 0, marginRight: 0, marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0, borderRadius: 0, boxShadow: 'none' }}>
+          <div className="flex flex-col items-start justify-center min-w-0 flex-1" style={{ paddingLeft: '12px', paddingRight: '12px' }}>
             <span
-              className={`text-black font-semibold leading-tight tracking-[0%] ${showOnlyResult ? 'text-xs sm:text-sm' : 'text-sm sm:text-base md:text-lg'}`}
+              className="text-black font-semibold leading-tight tracking-[0%]"
               style={{
                 fontFamily: 'Poppins',
                 fontWeight: 600,
                 fontStyle: 'SemiBold',
+                fontSize: 'clamp(12px, 3vw, 16px)',
               }}
             >
-              {showOnlyResult ? 'Result' : `Result: ${isLoading ? "Loading..." : (hasResult ? formatTimeForDisplay(lastResult.time!) : "N/A")}`}
+              Result
             </span>
-            {showOnlyResult && (
-              <span
-                className="text-gray-500 text-xs sm:text-sm leading-tight mt-0.5"
-                style={{
-                  fontFamily: 'Poppins',
-                  fontWeight: 400,
-                }}
-              >
-                {isLoading ? "Loading..." : (hasResult ? formatTimeForDisplay(lastResult.time!) : "N/A")}
-              </span>
-            )}
+            <span
+              className="text-gray-500 leading-tight mt-0.5"
+              style={{
+                fontFamily: 'Poppins',
+                fontWeight: 400,
+                fontSize: 'clamp(10px, 2.5vw, 14px)',
+              }}
+            >
+              {isLoading ? "Loading..." : (hasResult ? formatTimeForDisplay(lastResult.time!) : "N/A")}
+            </span>
           </div>
-          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0 ml-2">
+          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0" style={{ paddingRight: '12px' }}>
             {hasResult ? (
               <>
                   <span
@@ -375,7 +375,7 @@ export function ResultPanel({
                       fontFamily: 'Poppins',
                       fontWeight: 400,
                       fontStyle: 'Regular',
-                      fontSize: showOnlyResult ? 'clamp(20px, 4vw, 28px)' : 'clamp(28px, 6vw, 48px)',
+                      fontSize: 'clamp(20px, 5vw, 36px)',
                     }}
                   >
                     {cardData?.value}
@@ -383,8 +383,8 @@ export function ResultPanel({
                 <div 
                   className="shrink-0"
                   style={{ 
-                    width: showOnlyResult ? 'clamp(20px, 4vw, 28px)' : 'clamp(28px, 6vw, 48px)',
-                    height: showOnlyResult ? 'clamp(20px, 4vw, 28px)' : 'clamp(28px, 6vw, 48px)',
+                    width: 'clamp(20px, 5vw, 36px)',
+                    height: 'clamp(20px, 5vw, 36px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center'
@@ -392,18 +392,19 @@ export function ResultPanel({
                 >
                   <SuitIcon 
                     suit={cardData?.suit || "♠"} 
-                    size={showOnlyResult ? 28 : 48} 
+                    size={36} 
                     className="max-w-full max-h-full"
                   />
                 </div>
               </>
             ) : (
               <span
-                className={`text-gray-400 font-normal leading-tight tracking-[0%] ${showOnlyResult ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}
+                className="text-gray-400 font-normal leading-tight tracking-[0%]"
                 style={{
                   fontFamily: 'Poppins',
                   fontWeight: 400,
                   fontStyle: 'Regular',
+                  fontSize: 'clamp(12px, 3vw, 16px)',
                 }}
               >
                 N/A
@@ -415,24 +416,27 @@ export function ResultPanel({
 
         {/* Game Timer - Mobile */}
         {!showOnlyResult && (
-        <div className={`${showOnlyTimer ? '' : 'rounded-lg'} flex items-center justify-between ${showOnlyTimer ? 'px-2 py-1.5 sm:px-3 sm:py-2' : 'px-3 py-3 sm:px-4 sm:py-4'} ${horizontalMobileLayout && !showOnlyTimer ? 'flex-1 shrink-0 min-w-0' : 'w-full'} ${timerData.isBreak ? 'bg-orange-500' : 'bg-[#16c25f]'}`} style={{ minHeight: '60px', height: 'auto' }}>
+        <div className={`flex items-center justify-between ${horizontalMobileLayout && !showOnlyTimer ? 'flex-1 shrink-0 min-w-0' : 'w-full'} ${timerData.isBreak ? 'bg-orange-500' : 'bg-[#16c25f]'}`} style={{ minHeight: '60px', height: 'auto', paddingLeft: 0, paddingRight: 0, marginLeft: 0, marginRight: 0, marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0, borderRadius: 0 }}>
           <span
-            className={`text-white font-normal leading-tight tracking-[0%] ${showOnlyTimer ? 'text-xs sm:text-sm' : 'text-sm sm:text-base md:text-lg'} shrink-0`}
+            className="text-white font-normal leading-tight tracking-[0%] shrink-0"
             style={{
               fontFamily: 'Poppins',
               fontWeight: 400,
               fontStyle: 'Regular',
+              paddingLeft: '12px',
+              fontSize: 'clamp(12px, 3vw, 16px)',
             }}
           >
             {timerData.isBreak ? 'Starting In' : 'Game Timer'}
           </span>
           <span
-            className="text-white font-normal leading-tight tracking-[0%] shrink-0 ml-2"
+            className="text-white font-normal leading-tight tracking-[0%] shrink-0"
             style={{
               fontFamily: 'Poppins',
               fontWeight: 400,
               fontStyle: 'Regular',
-              fontSize: showOnlyTimer ? 'clamp(16px, 3.5vw, 20px)' : 'clamp(20px, 5vw, 32px)',
+              fontSize: 'clamp(14px, 4vw, 24px)',
+              paddingRight: '12px',
             }}
           >
             {formatTime(timerData.currentTime)}
