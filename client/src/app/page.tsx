@@ -151,10 +151,17 @@ export default function Home() {
       <div className="md:hidden flex flex-col min-h-screen text-white bg-[#0a0f1a]">
         <Header onLoginClick={() => setLoginOpen(true)} />
         
+        {/* Result Panel - Outside container, no padding-x */}
+        <div className="w-full">
+          <ResultPanel 
+            onLoginClick={() => setLoginOpen(true)} 
+            horizontalMobileLayout={true}
+            showOnlyResult={false}
+            showOnlyTimer={false}
+          />
+        </div>
+        
         <main className="flex-1 w-full px-4 py-6">
-          {/* Result Panel */}
-          <ResultPanel onLoginClick={() => setLoginOpen(true)} />
-          
           {/* Mobile Banner */}
           <MobileBanner onBannerClick={scrollToRules} />
           
