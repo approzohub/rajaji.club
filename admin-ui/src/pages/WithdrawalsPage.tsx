@@ -5,10 +5,12 @@ import { CheckCircle, Cancel, Visibility, ViewColumn, Search, ContentCopy } from
 import { useGetWithdrawalsQuery, useApproveWithdrawalMutation, useRejectWithdrawalMutation } from '../api/withdrawalsApi';
 import { useGetUsersQuery } from '../api/usersApi';
 import { useState, useMemo } from 'react';
+import { useAuth } from '../auth';
 
 type User = import('../api/usersApi').User;
 
 export default function WithdrawalsPage() {
+  const { user: currentUser } = useAuth();
   const [paginationModel, setPaginationModel] = useState<{ page: number; pageSize: number }>({
     page: 0,
     pageSize: 100,
@@ -370,9 +372,10 @@ export default function WithdrawalsPage() {
       renderCell: (params: { row: import('../api/withdrawalsApi').Withdrawal }) => {
         if (!params || !params.row) return null;
         const isPending = params.row.status?.toLowerCase() === 'pending';
+        const isAdmin = currentUser?.role === 'admin';
         return (
           <Box display="flex" gap={1}>
-            {isPending && (
+            {isPending && isAdmin && (
               <>
                 <Tooltip title="Approve Withdrawal">
                   <IconButton

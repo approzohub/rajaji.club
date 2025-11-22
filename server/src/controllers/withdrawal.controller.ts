@@ -131,7 +131,7 @@ export async function listWithdrawals(req: AuthRequest, res: Response) {
 
 export async function approveWithdrawal(req: AuthRequest, res: Response) {
   const { id: adminId, role } = req.user || {};
-  if (!adminId || (role !== 'admin' && role !== 'agent')) return res.status(403).json({ error: 'Forbidden' });
+  if (!adminId || role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
   const { id } = req.params;
   if (!Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid withdrawal id' });
   
@@ -172,7 +172,7 @@ export async function approveWithdrawal(req: AuthRequest, res: Response) {
 
 export async function rejectWithdrawal(req: AuthRequest, res: Response) {
   const { id: adminId, role } = req.user || {};
-  if (!adminId || (role !== 'admin' && role !== 'agent')) return res.status(403).json({ error: 'Forbidden' });
+  if (!adminId || role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
   const { id } = req.params;
   if (!Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid withdrawal id' });
   

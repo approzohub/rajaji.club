@@ -68,7 +68,7 @@ router.get('/withdrawals', jwtAuth, listWithdrawals);
  *       200: { description: Withdrawal approved }
  *       404: { description: Withdrawal not found }
  */
-router.patch('/withdrawals/:id/approve', jwtAuth, requireRole('admin', 'agent'), approveWithdrawal);
+router.patch('/withdrawals/:id/approve', jwtAuth, requireRole('admin'), approveWithdrawal);
 
 /**
  * @swagger
@@ -86,7 +86,7 @@ router.patch('/withdrawals/:id/approve', jwtAuth, requireRole('admin', 'agent'),
  *       200: { description: Withdrawal rejected }
  *       404: { description: Withdrawal not found }
  */
-router.patch('/withdrawals/:id/reject', jwtAuth, requireRole('admin', 'agent'), rejectWithdrawal);
+router.patch('/withdrawals/:id/reject', jwtAuth, requireRole('admin'), rejectWithdrawal);
 
 
 
