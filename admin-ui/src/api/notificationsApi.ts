@@ -26,8 +26,14 @@ export const notificationsApi = createApi({
   baseQuery,
   tagTypes: ['Notification'],
   endpoints: (builder) => ({
-    getNotifications: builder.query<NotificationsResponse, { page?: number; limit?: number }>({
-      query: ({ page = 1, limit = 20 }) => `notifications?page=${page}&limit=${limit}`,
+    getNotifications: builder.query<NotificationsResponse, { page?: number; limit?: number; search?: string }>({
+      query: ({ page = 1, limit = 20, search }) => {
+        const searchParams = new URLSearchParams();
+        searchParams.set('page', String(page));
+        searchParams.set('limit', String(limit));
+        if (search) searchParams.set('search', search);
+        return `notifications?${searchParams.toString()}`;
+      },
       providesTags: ['Notification'],
     }),
     markAsRead: builder.mutation<{ message: string }, string>({

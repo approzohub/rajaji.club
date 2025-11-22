@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   Typography, 
@@ -11,16 +11,30 @@ import {
   DialogActions, 
   TextField, 
   IconButton,
-  Chip
+  Chip,
+  InputAdornment,
+  Tooltip
 } from '@mui/material';
-import { Add, Edit, Delete } from '@mui/icons-material';
+import { Add, Edit, Delete, Search } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useGetCMSPagesQuery, useCreateCMSPageMutation, useUpdateCMSPageMutation, useDeleteCMSPageMutation } from '../api/cmsApi';
 import type { CMSPage } from '../api/cmsApi';
 
 export default function CMSPage() {
-  const { data: pages = [], isLoading, error } = useGetCMSPagesQuery();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term by 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const { data: pages = [], isLoading, error } = useGetCMSPagesQuery({ search: debouncedSearchTerm || undefined });
   const [createCMSPage] = useCreateCMSPageMutation();
   const [updateCMSPage] = useUpdateCMSPageMutation();
   const [deleteCMSPage] = useDeleteCMSPageMutation();
@@ -165,8 +179,39 @@ export default function CMSPage() {
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <Typography variant="h5">CMS Pages Management</Typography>
-        <Button 
-          variant="contained" 
+      </Box>
+      <Box sx={{ mb: 3 }}>
+        <Tooltip 
+          title="Search by: Page Title, Slug (URL), or Content" 
+          arrow
+          placement="top"
+        >
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search by title, slug, or content..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ maxWidth: 600 }}
+          />
+        </Tooltip>
+        {searchTerm && searchTerm !== debouncedSearchTerm && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress size={14} />
+            Searching...
+          </Typography>
+        )}
+      </Box>
+      <Box display="flex" justifyContent="flex-end" alignItems="center" mb={2}>
+        <Button
+          variant="contained"
           startIcon={<Add />}
           onClick={() => handleOpenDialog()}
         >

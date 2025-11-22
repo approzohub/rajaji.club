@@ -53,9 +53,30 @@ export async function listGames(req: AuthRequest, res: Response) {
     const page = Math.max(parseInt(req.query.page as string, 10) || 1, 1);
     const limit = Math.max(parseInt(req.query.limit as string, 10) || 50, 1);
     const skip = (page - 1) * limit;
+    const search = (req.query.search as string)?.trim() || '';
 
     const filter: any = {};
     if (status) filter.status = status;
+    
+    // Add search filter if provided
+    if (search) {
+      // Check if search is a valid ObjectId
+      const isObjectId = Types.ObjectId.isValid(search);
+      const searchConditions: any[] = [];
+      
+      if (isObjectId) {
+        // If it's a valid ObjectId, search by exact _id match
+        searchConditions.push({ _id: new Types.ObjectId(search) });
+      } else {
+        // Otherwise, use regex for partial match on _id string representation
+        searchConditions.push({ _id: { $regex: search, $options: 'i' } });
+      }
+      
+      // Also search by winning card
+      searchConditions.push({ winningCard: { $regex: search, $options: 'i' } });
+      
+      filter.$or = searchConditions;
+    }
     
     // Counts for summary cards
     const [totalGames, openGames, waitingResultGames, declaredGames, totalResults] = await Promise.all([

@@ -4,7 +4,7 @@ import type { GridColDef, GridColumnVisibilityModel } from '@mui/x-data-grid';
 import { CheckCircle, Cancel, Visibility, ViewColumn, Search, ContentCopy } from '@mui/icons-material';
 import { useGetWithdrawalsQuery, useApproveWithdrawalMutation, useRejectWithdrawalMutation } from '../api/withdrawalsApi';
 import { useGetUsersQuery } from '../api/usersApi';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../auth';
 
 type User = import('../api/usersApi').User;
@@ -15,10 +15,22 @@ export default function WithdrawalsPage() {
     page: 0,
     pageSize: 100,
   });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term by 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const { data, isLoading, error } = useGetWithdrawalsQuery({
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
+    search: debouncedSearchTerm || undefined,
   });
 
   const withdrawals = data?.withdrawals ?? [];
@@ -51,7 +63,6 @@ export default function WithdrawalsPage() {
   const [noteAction, setNoteAction] = useState<'approve' | 'reject' | null>(null);
   const [noteText, setNoteText] = useState('');
   const [selectedWithdrawalForAction, setSelectedWithdrawalForAction] = useState<Withdrawal | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
 
   const selectedUser: PopulatedUser | undefined = useMemo(() => {
     if (!selected) return undefined;
@@ -181,24 +192,10 @@ export default function WithdrawalsPage() {
     });
   }, [withdrawals, userMap]);
 
-  const filteredRows = useMemo(() => {
-    if (!searchTerm.trim()) return rows;
-    const query = searchTerm.trim().toLowerCase();
-    return rows.filter(row => {
-      const name = row.userName?.toLowerCase() || '';
-      const id = row.userId?.toLowerCase() || '';
-      const phone = row.userPhone?.toLowerCase() || '';
-      const status = row.status?.toLowerCase() || '';
-      const note = row.note?.toLowerCase() || '';
-      return (
-        name.includes(query) ||
-        id.includes(query) ||
-        phone.includes(query) ||
-        status.includes(query) ||
-        note.includes(query)
-      );
-    });
-  }, [rows, searchTerm]);
+  // Reset to first page when debounced search changes
+  useEffect(() => {
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
+  }, [debouncedSearchTerm]);
 
   const [columnVisibilityAnchor, setColumnVisibilityAnchor] = useState<null | HTMLElement>(null);
   const [columnVisibilityModel, setColumnVisibilityModel] = useState<GridColumnVisibilityModel>({
@@ -436,21 +433,33 @@ export default function WithdrawalsPage() {
             </Button>
           </Box>
         </Box>
-        <TextField
-          fullWidth
-          size="small"
-          placeholder="Search withdrawals..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ maxWidth: 600 }}
-        />
+        <Tooltip 
+          title="Search by: User Name, Phone, Email, Game ID, Note, or Status" 
+          arrow
+          placement="top"
+        >
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search withdrawals..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ maxWidth: 600 }}
+          />
+        </Tooltip>
+        {searchTerm && searchTerm !== debouncedSearchTerm && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress size={14} />
+            Searching...
+          </Typography>
+        )}
       </Box>
       <Popover
         open={Boolean(columnVisibilityAnchor)}
@@ -501,7 +510,7 @@ export default function WithdrawalsPage() {
       ) : (
         <Box sx={{ width: '100%', overflowX: 'auto' }}>
           <DataGrid
-            rows={filteredRows}
+            rows={rows}
             columns={columns}
             getRowId={(row) => row._id || Math.random().toString()}
             autoHeight

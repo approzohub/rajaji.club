@@ -5,15 +5,31 @@ import {
   Alert, 
   Button, 
   IconButton,
-  Chip
+  Chip,
+  TextField,
+  InputAdornment,
+  Tooltip
 } from '@mui/material';
-import { Edit } from '@mui/icons-material';
+import { Edit, Search } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useGetNotificationsQuery, useMarkAsReadMutation, useMarkAllAsReadMutation } from '../api/notificationsApi';
+import { useState, useEffect } from 'react';
 
 export default function NotificationsPage() {
-  const { data: notificationsData, isLoading, error } = useGetNotificationsQuery({ page: 1, limit: 100 });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term by 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const { data: notificationsData, isLoading, error } = useGetNotificationsQuery({ page: 1, limit: 100, search: debouncedSearchTerm || undefined });
   const [markAsRead] = useMarkAsReadMutation();
   const [markAllAsRead] = useMarkAllAsReadMutation();
   
@@ -141,7 +157,35 @@ export default function NotificationsPage() {
           Mark All as Read
         </Button>
       </Box>
-      
+      <Box sx={{ mb: 3 }}>
+        <Tooltip 
+          title="Search by: User Name, Phone, Email, Game ID, Notification Title, or Message" 
+          arrow
+          placement="top"
+        >
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search by user name, phone, email, title, or message..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ maxWidth: 600 }}
+          />
+        </Tooltip>
+        {searchTerm && searchTerm !== debouncedSearchTerm && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress size={14} />
+            Searching...
+          </Typography>
+        )}
+      </Box>
       {isLoading ? <CircularProgress /> : error ? <Alert severity="error">{(error as unknown as { data?: { error?: string } }).data?.error || 'Failed to load notifications'}</Alert> : (
         <DataGrid
           rows={notifications}

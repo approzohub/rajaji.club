@@ -57,10 +57,22 @@ export default function UsersPage() {
     page: 0,
     pageSize: 100,
   });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term by 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const { data, isLoading, error } = useGetUsersQuery({
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
+    search: debouncedSearchTerm || undefined,
   });
 
   const users = data?.users ?? [];
@@ -84,7 +96,6 @@ export default function UsersPage() {
   const [passwordChangeOpen, setPasswordChangeOpen] = useState(false);
   const [passwordChangeUser, setPasswordChangeUser] = useState<User | null>(null);
   const [passwordChangeError, setPasswordChangeError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
   const [viewUserOpen, setViewUserOpen] = useState(false);
   const [viewUser, setViewUser] = useState<User | null>(null);
 
@@ -225,20 +236,10 @@ export default function UsersPage() {
     });
   }, [currentUser, canAddUsers]);
 
-  // Filter users based on search term
-  const filteredUsers = users.filter(user => {
-    if (!searchTerm) return true;
-    
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      user.fullName?.toLowerCase().includes(searchLower) ||
-      user.email?.toLowerCase().includes(searchLower) ||
-      user.phone?.toLowerCase().includes(searchLower) ||
-      user._id?.toLowerCase().includes(searchLower) ||
-      user.role?.toLowerCase().includes(searchLower) ||
-      user.status?.toLowerCase().includes(searchLower)
-    );
-  });
+  // Reset to first page when debounced search changes
+  useEffect(() => {
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
+  }, [debouncedSearchTerm]);
 
   const columns: GridColDef[] = [
     { 
@@ -422,30 +423,42 @@ export default function UsersPage() {
       
       {/* Search Bar */}
       <Box sx={{ mb: 3 }}>
-        <TextField
-          fullWidth
-          placeholder="Search users by name, email, phone, user ID, role, or status..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ maxWidth: 600 }}
-        />
-        {searchTerm && (
+        <Tooltip 
+          title="Search by: Full Name, Email, Phone, User ID, Game ID, Role, or Status" 
+          arrow
+          placement="top"
+        >
+          <TextField
+            fullWidth
+            placeholder="Search users by name, email, phone, user ID, role, or status..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ maxWidth: 600 }}
+          />
+        </Tooltip>
+        {searchTerm && searchTerm !== debouncedSearchTerm && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress size={14} />
+            Searching...
+          </Typography>
+        )}
+        {searchTerm && searchTerm === debouncedSearchTerm && (
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Showing {filteredUsers.length} of {data?.pagination.totalResults ?? 0} users
+            Showing {users.length} of {data?.pagination.totalResults ?? 0} users
           </Typography>
         )}
       </Box>
       {isLoading ? <CircularProgress /> : error ? <Alert severity="error">{(error as unknown as { data?: { error?: string } }).data?.error || 'Failed to load users'}</Alert> : (
         <Box sx={{ width: '100%', overflow: 'auto' }}>
           <DataGrid
-            rows={filteredUsers}
+            rows={users}
             columns={columns}
             getRowId={(row) => row._id}
             autoHeight

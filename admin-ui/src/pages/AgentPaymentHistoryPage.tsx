@@ -1,12 +1,22 @@
 import { Box, Typography, CircularProgress, Alert, Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TablePagination, Tooltip, TextField, InputAdornment } from '@mui/material';
 import { Search } from '@mui/icons-material';
 import { useGetPaymentHistoryQuery } from '../api/walletApi';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 export default function AgentPaymentHistoryPage() {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(100);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term by 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const { data, isLoading, error } = useGetPaymentHistoryQuery({
     page: page + 1,
@@ -94,11 +104,11 @@ export default function AgentPaymentHistoryPage() {
     }
   };
 
-  // Filter transactions based on search term
+  // Filter transactions based on debounced search term
   const filteredTransactions = useMemo(() => {
-    if (!searchTerm.trim()) return allTransactions;
+    if (!debouncedSearchTerm.trim()) return allTransactions;
     
-    const query = searchTerm.trim().toLowerCase();
+    const query = debouncedSearchTerm.trim().toLowerCase();
     return allTransactions.filter((transaction) => {
       const type = getTransactionTypeLabelForFilter(transaction.type, transaction.transactionType).toLowerCase();
       const amount = Math.abs(transaction.amount).toString();
@@ -122,7 +132,7 @@ export default function AgentPaymentHistoryPage() {
         date.includes(query)
       );
     });
-  }, [allTransactions, searchTerm]);
+  }, [allTransactions, debouncedSearchTerm]);
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
@@ -288,26 +298,38 @@ export default function AgentPaymentHistoryPage() {
         <Typography variant="h5" sx={{ fontWeight: 700 }}>
           My Payment History
         </Typography>
-        <TextField
-          fullWidth
-          size="small"
-          placeholder="Search by type, amount, wallet, payment mode, status, note, processed by, or date..."
-          value={searchTerm}
-          onChange={(e) => {
-            setSearchTerm(e.target.value);
-            setPage(0); // Reset to first page when searching
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ maxWidth: 600 }}
-        />
-        {searchTerm && (
-          <Typography variant="body2" color="text.secondary">
+        <Tooltip 
+          title="Search by: Transaction Type (Recharge/Debit/Refund/Bonus/Bid/Withdrawal), Amount, Wallet Type (Main/Bonus), Payment Mode (UPI/Wallet), Status, Note, Processed By (Name/Role), or Date" 
+          arrow
+          placement="top"
+        >
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search by type, amount, wallet, payment mode, status, note, processed by, or date..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setPage(0); // Reset to first page when searching
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ maxWidth: 600 }}
+          />
+        </Tooltip>
+        {searchTerm && searchTerm !== debouncedSearchTerm && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress size={14} />
+            Searching...
+          </Typography>
+        )}
+        {searchTerm && searchTerm === debouncedSearchTerm && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
             Showing {filteredTransactions.length} of {allTransactions.length} transactions
           </Typography>
         )}

@@ -78,10 +78,21 @@ export async function listUsers(req: AuthRequest, res: Response) {
   const page = Math.max(parseInt(req.query.page as string, 10) || 1, 1);
   const limit = Math.max(parseInt(req.query.limit as string, 10) || 50, 1);
   const skip = (page - 1) * limit;
+  const search = (req.query.search as string)?.trim() || '';
 
   const filter: any = req.user.role === 'admin'
     ? {}
     : { assignedAgent: req.user.id };
+
+  // Add search filter if provided
+  if (search) {
+    filter.$or = [
+      { fullName: { $regex: search, $options: 'i' } },
+      { phone: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } },
+      { gameId: { $regex: search, $options: 'i' } },
+    ];
+  }
 
   const [users, total, activeCount, disabledCount, bannedCount] = await Promise.all([
     User.find(filter).select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit),

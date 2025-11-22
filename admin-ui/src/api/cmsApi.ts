@@ -14,8 +14,13 @@ export const cmsApi = createApi({
   baseQuery,
   tagTypes: ['CMSPage'],
   endpoints: (builder) => ({
-    getCMSPages: builder.query<CMSPage[], void>({
-      query: () => 'cms',
+    getCMSPages: builder.query<CMSPage[], { search?: string } | void>({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.search) searchParams.set('search', params.search);
+        const qs = searchParams.toString();
+        return `cms${qs ? `?${qs}` : ''}`;
+      },
       providesTags: ['CMSPage'],
     }),
     createCMSPage: builder.mutation<CMSPage, Partial<CMSPage>>({

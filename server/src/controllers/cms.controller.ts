@@ -20,8 +20,19 @@ export async function createCMSPage(req: AuthRequest, res: Response) {
   res.status(201).json(page);
 }
 
-export async function listCMSPages(_req: Request, res: Response) {
-  const pages = await CMSPage.find().sort({ createdAt: -1 });
+export async function listCMSPages(req: Request, res: Response) {
+  const search = (req.query.search as string)?.trim() || '';
+  const filter: any = {};
+  
+  if (search) {
+    filter.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { slug: { $regex: search, $options: 'i' } },
+      { content: { $regex: search, $options: 'i' } },
+    ];
+  }
+  
+  const pages = await CMSPage.find(filter).sort({ createdAt: -1 });
   res.json(pages);
 }
 

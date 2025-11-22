@@ -5,7 +5,7 @@ import { useGetWalletsQuery, useRechargeWalletMutation, useManualDebitMutation, 
 import { useGetUsersQuery } from '../api/usersApi';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../auth';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import ContentCopy from '@mui/icons-material/ContentCopy';
 import SearchIcon from '@mui/icons-material/Search';
 
@@ -24,10 +24,22 @@ export default function WalletPage() {
     page: 0,
     pageSize: 100,
   });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term by 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const { data, isLoading, error, refetch } = useGetWalletsQuery({
     page: paginationModel.page + 1,
     limit: paginationModel.pageSize,
+    search: debouncedSearchTerm || undefined,
   });
 
   const wallets = data?.wallets ?? [];
@@ -41,7 +53,7 @@ export default function WalletPage() {
   const [confirmRechargeOpen, setConfirmRechargeOpen] = useState(false);
   const [rechargeFormData, setRechargeFormData] = useState<RechargePayload | null>(null);
   const [rechargeUserIdentifier, setRechargeUserIdentifier] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
+
   const { data: usersResponse } = useGetUsersQuery();
   const users: User[] = usersResponse?.users ?? [];
   const usersMap = useMemo(() => {
@@ -201,24 +213,10 @@ export default function WalletPage() {
     };
   }), [wallets, usersMap]);
 
-  const filteredWalletRows = useMemo(() => {
-    if (!searchTerm.trim()) return walletRows;
-    const query = searchTerm.trim().toLowerCase();
-    return walletRows.filter(row => {
-      const name = row.userName?.toLowerCase() || '';
-      const id = row.userId?.toLowerCase() || '';
-      const phone = row.userPhone?.toLowerCase() || '';
-      const email = row.userEmail?.toLowerCase() || '';
-      const role = row.userRole?.toLowerCase() || '';
-      return (
-        name.includes(query) ||
-        id.includes(query) ||
-        phone.includes(query) ||
-        email.includes(query) ||
-        role.includes(query)
-      );
-    });
-  }, [walletRows, searchTerm]);
+  // Reset to first page when debounced search changes
+  useEffect(() => {
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
+  }, [debouncedSearchTerm]);
 
   const handleRowClick = (params: { row: { user: { _id: string } } }) => {
     setSelectedUserId(params.row.user._id);
@@ -329,26 +327,38 @@ export default function WalletPage() {
             )}
           </Box>
         </Box>
-        <TextField
-          fullWidth
-          size="small"
-          placeholder="Search by name, user ID, phone, email..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ maxWidth: 600 }}
-        />
+        <Tooltip 
+          title="Search by: User Name, User ID, Phone, Email, or Game ID" 
+          arrow
+          placement="top"
+        >
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search by name, user ID, phone, email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ maxWidth: 600 }}
+          />
+        </Tooltip>
+        {searchTerm && searchTerm !== debouncedSearchTerm && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress size={14} />
+            Searching...
+          </Typography>
+        )}
       </Box>
       {isLoading ? <CircularProgress /> : error ? <Alert severity="error">{(error as unknown as { data?: { error?: string } }).data?.error || 'Failed to load wallets'}</Alert> : (
         <Box sx={{ width: '100%', overflow: 'auto' }}>
           <DataGrid
-            rows={filteredWalletRows}
+            rows={walletRows}
             columns={columns}
             getRowId={(row) => row._id}
             onRowClick={handleRowClick}

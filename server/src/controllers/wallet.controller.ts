@@ -201,6 +201,7 @@ export async function listWallets(req: AuthRequest, res: Response) {
   const page = Math.max(parseInt(req.query.page as string, 10) || 1, 1);
   const limit = Math.max(parseInt(req.query.limit as string, 10) || 50, 1);
   const skip = (page - 1) * limit;
+  const search = (req.query.search as string)?.trim() || '';
 
   let filter: any = {};
   if (role === 'agent') {
@@ -208,6 +209,28 @@ export async function listWallets(req: AuthRequest, res: Response) {
     const assignedUsers = await User.find({ assignedAgent: userId }).select('_id');
     const assignedUserIds = assignedUsers.map(u => u._id);
     filter = { user: { $in: assignedUserIds } };
+  }
+
+  // Add search filter if provided
+  if (search) {
+    // Search in user fields by finding matching users first
+    const userSearchFilter: any = {
+      $or: [
+        { fullName: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+        { gameId: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ]
+    };
+    
+    // If filter already has user restriction (agent), add it to user search
+    if (filter.user && filter.user.$in) {
+      userSearchFilter._id = { $in: filter.user.$in };
+    }
+    
+    const matchingUsers = await User.find(userSearchFilter).select('_id');
+    const matchingUserIds = matchingUsers.map(u => u._id);
+    filter.user = { $in: matchingUserIds };
   }
 
   const [wallets, total] = await Promise.all([

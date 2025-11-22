@@ -46,11 +46,12 @@ export const walletApi = createApi({
         agents: number;
         users: number;
       };
-    }, { page?: number; limit?: number } | void>({
+    }, { page?: number; limit?: number; search?: string } | void>({
       query: (params) => {
         const searchParams = new URLSearchParams();
         if (params?.page) searchParams.set('page', String(params.page));
         if (params?.limit) searchParams.set('limit', String(params.limit));
+        if (params?.search) searchParams.set('search', params.search);
         const qs = searchParams.toString();
         return `wallet${qs ? `?${qs}` : ''}`;
       },

@@ -1,10 +1,24 @@
-import { Box, Typography, CircularProgress, Alert, Chip } from '@mui/material';
+import { Box, Typography, CircularProgress, Alert, Chip, TextField, InputAdornment, Tooltip } from '@mui/material';
+import { Search } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 import type { GridColDef } from '@mui/x-data-grid';
 import { useGetUserBidsQuery } from '../api/bidsApi';
+import { useState, useEffect } from 'react';
 
 export default function BidsPage() {
-  const { data: bids = [], isLoading, error } = useGetUserBidsQuery();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term by 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const { data: bids = [], isLoading, error } = useGetUserBidsQuery({ search: debouncedSearchTerm || undefined });
 
   const columns: GridColDef[] = [
     { 
@@ -170,6 +184,35 @@ export default function BidsPage() {
   return (
     <Box>
       <Typography variant="h5" mb={2}>Bids Management</Typography>
+      <Box sx={{ mb: 3 }}>
+        <Tooltip 
+          title="Search by: User Name, Phone, Email, Game ID, Card Name, Card Type (J/Q/K/A/10), or Card Suit (clubs/spades/hearts/diamonds)" 
+          arrow
+          placement="top"
+        >
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search by user name, phone, email, game ID, card name, type, or suit..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ maxWidth: 600 }}
+          />
+        </Tooltip>
+        {searchTerm && searchTerm !== debouncedSearchTerm && (
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CircularProgress size={14} />
+            Searching...
+          </Typography>
+        )}
+      </Box>
       {isLoading ? <CircularProgress /> : error ? <Alert severity="error">{(error as unknown as { data?: { error?: string } }).data?.error || 'Failed to load bids'}</Alert> : (
         <DataGrid
           rows={bids}

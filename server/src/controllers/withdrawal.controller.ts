@@ -84,6 +84,7 @@ export async function listWithdrawals(req: AuthRequest, res: Response) {
   const page = Math.max(parseInt(req.query.page as string, 10) || 1, 1);
   const limit = Math.max(parseInt(req.query.limit as string, 10) || 50, 1);
   const skip = (page - 1) * limit;
+  const search = (req.query.search as string)?.trim() || '';
 
   let filter: any = {};
   
@@ -100,6 +101,26 @@ export async function listWithdrawals(req: AuthRequest, res: Response) {
   } else {
     // Unknown role - default to user's own withdrawals for security
     filter.user = userId;
+  }
+
+  // Add search filter if provided
+  if (search) {
+    // Search in user fields by finding matching users first
+    const matchingUsers = await User.find({
+      $or: [
+        { fullName: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+        { gameId: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ]
+    }).select('_id');
+    const matchingUserIds = matchingUsers.map(u => u._id);
+    
+    filter.$or = [
+      { user: { $in: matchingUserIds } },
+      { note: { $regex: search, $options: 'i' } },
+      { status: { $regex: search, $options: 'i' } },
+    ];
   }
   
   const [total, pendingCount, withdrawals] = await Promise.all([

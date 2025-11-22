@@ -94,8 +94,13 @@ export const bidsApi = createApi({
       invalidatesTags: ['Bid'],
     }),
     
-    getUserBids: builder.query<Bid[], void>({
-      query: () => 'bids',
+    getUserBids: builder.query<Bid[], { search?: string } | void>({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.search) searchParams.set('search', params.search);
+        const qs = searchParams.toString();
+        return `bids${qs ? `?${qs}` : ''}`;
+      },
       providesTags: ['Bid'],
     }),
     

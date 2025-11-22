@@ -215,6 +215,7 @@ export async function listUserBids(req: AuthRequest, res: Response) {
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
   
   try {
+    const search = (req.query.search as string)?.trim() || '';
     let filter: any = {};
     
     if (role === 'user') {
@@ -228,6 +229,45 @@ export async function listUserBids(req: AuthRequest, res: Response) {
       filter.user = { $in: userIds };
     }
     // Admin can see all
+    
+    // Add search filter if provided
+    if (search) {
+      // Search in user fields by finding matching users first
+      const userSearchFilter: any = {
+        $or: [
+          { fullName: { $regex: search, $options: 'i' } },
+          { phone: { $regex: search, $options: 'i' } },
+          { gameId: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+        ]
+      };
+      
+      // If filter already has user restriction, add it to user search
+      if (filter.user && filter.user.$in) {
+        userSearchFilter._id = { $in: filter.user.$in };
+      }
+      
+      const matchingUsers = await User.find(userSearchFilter).select('_id');
+      const matchingUserIds = matchingUsers.map(u => u._id);
+      
+      // Build search filter
+      const searchConditions: any[] = [
+        { cardName: { $regex: search, $options: 'i' } },
+        { cardType: { $regex: search, $options: 'i' } },
+        { cardSuit: { $regex: search, $options: 'i' } },
+      ];
+      
+      if (matchingUserIds.length > 0) {
+        searchConditions.push({ user: { $in: matchingUserIds } });
+      }
+      
+      // If filter already has user restriction, keep it and add card search
+      if (filter.user && filter.user.$in) {
+        filter.$or = searchConditions;
+      } else {
+        filter.$or = searchConditions;
+      }
+    }
     
     const bids = await Bid.find(filter)
       .populate('user', 'fullName email phone gameId')

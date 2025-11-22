@@ -13,6 +13,7 @@ export async function getNotifications(req: AuthRequest, res: Response) {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
     const skip = (page - 1) * limit;
+    const search = (req.query.search as string)?.trim() || '';
 
     // Build filter based on user role
     let filter: any = {};
@@ -24,6 +25,39 @@ export async function getNotifications(req: AuthRequest, res: Response) {
       filter.userId = { $in: assignedUserIds };
     }
     // Admin sees all notifications (no filter)
+
+    // Add search filter if provided
+    if (search) {
+      // Search in user fields by finding matching users first
+      const matchingUsers = await User.find({
+        $or: [
+          { fullName: { $regex: search, $options: 'i' } },
+          { phone: { $regex: search, $options: 'i' } },
+          { gameId: { $regex: search, $options: 'i' } },
+          { email: { $regex: search, $options: 'i' } },
+        ]
+      }).select('_id');
+      const matchingUserIds = matchingUsers.map(u => u._id);
+      
+      filter.$or = [
+        { userId: { $in: matchingUserIds } },
+        { title: { $regex: search, $options: 'i' } },
+        { message: { $regex: search, $options: 'i' } },
+        { userFullName: { $regex: search, $options: 'i' } },
+      ];
+      
+      // If filter already has userId restriction (agent), intersect
+      if (filter.userId && filter.userId.$in) {
+        const existingUserIds = filter.userId.$in;
+        filter.userId = { $in: existingUserIds.filter((id: any) => matchingUserIds.some((mid: any) => mid.equals(id))) };
+        filter.$or = [
+          { userId: filter.userId },
+          { title: { $regex: search, $options: 'i' } },
+          { message: { $regex: search, $options: 'i' } },
+          { userFullName: { $regex: search, $options: 'i' } },
+        ];
+      }
+    }
 
     const [notifications, total] = await Promise.all([
       Notification.find(filter)

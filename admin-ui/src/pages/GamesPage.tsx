@@ -29,7 +29,10 @@ import {
   Checkbox,
   FormControlLabel,
   Popover,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
+import { Search } from '@mui/icons-material';
 import { 
   EmojiEvents, 
   TrendingUp, 
@@ -80,6 +83,17 @@ export default function GamesPage() {
     page: 0,
     pageSize: 100,
   });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term by 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const currentStatus =
     tabValue === 1 ? 'open' :
@@ -91,7 +105,13 @@ export default function GamesPage() {
     status: currentStatus,
     page: paginationModel.page + 1, // API is 1-based
     limit: paginationModel.pageSize,
+    search: debouncedSearchTerm || undefined,
   });
+
+  // Reset to first page when debounced search changes
+  useEffect(() => {
+    setPaginationModel(prev => ({ ...prev, page: 0 }));
+  }, [debouncedSearchTerm]);
 
   const games = data?.games ?? [];
   const counts = data?.counts;
@@ -765,6 +785,35 @@ export default function GamesPage() {
       </Popover>
 
       <TabPanel value={tabValue} index={0}>
+        <Box sx={{ mb: 2 }}>
+          <Tooltip 
+            title="Search by: Game ID (full or partial) or Winning Card Name" 
+            arrow
+            placement="top"
+          >
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Search by game ID or winning card..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{ maxWidth: 600 }}
+            />
+          </Tooltip>
+          {searchTerm && searchTerm !== debouncedSearchTerm && (
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CircularProgress size={14} />
+              Searching...
+            </Typography>
+          )}
+        </Box>
         <Box sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden', px: 0 }}>
           <Box sx={{ width: '100%', overflowX: 'auto' }}>
         <DataGrid
