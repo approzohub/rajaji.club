@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { Notification } from '../models/notification.model';
+import { User } from '../models/user.model';
 import { AuthRequest } from '../middleware/auth';
 import { getIO } from '../utils/socket-io';
 
@@ -13,12 +14,23 @@ export async function getNotifications(req: AuthRequest, res: Response) {
     const limit = parseInt(req.query.limit as string) || 20;
     const skip = (page - 1) * limit;
 
+    // Build filter based on user role
+    let filter: any = {};
+    
+    if (req.user.role === 'agent') {
+      // Agents can only see notifications for their assigned users
+      const assignedUsers = await User.find({ assignedAgent: req.user.id }).select('_id');
+      const assignedUserIds = assignedUsers.map(u => u._id);
+      filter.userId = { $in: assignedUserIds };
+    }
+    // Admin sees all notifications (no filter)
+
     const [notifications, total] = await Promise.all([
-      Notification.find()
+      Notification.find(filter)
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit),
-      Notification.countDocuments()
+      Notification.countDocuments(filter)
     ]);
 
     const hasMore = skip + notifications.length < total;
@@ -44,15 +56,28 @@ export async function markAsRead(req: AuthRequest, res: Response) {
   try {
     const { id } = req.params;
     
-    const notification = await Notification.findByIdAndUpdate(
+    // First, find the notification
+    const notification = await Notification.findById(id);
+    
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    // If agent, verify they have access to this notification
+    if (req.user.role === 'agent') {
+      const assignedUsers = await User.find({ assignedAgent: req.user.id }).select('_id');
+      const assignedUserIds = assignedUsers.map(u => String(u._id));
+      if (!assignedUserIds.includes(String(notification.userId))) {
+        return res.status(403).json({ error: 'You can only mark notifications for your assigned users as read' });
+      }
+    }
+
+    // Update notification
+    await Notification.findByIdAndUpdate(
       id,
       { isRead: true },
       { new: true }
     );
-
-    if (!notification) {
-      return res.status(404).json({ error: 'Notification not found' });
-    }
 
     res.json({ message: 'Notification marked as read' });
   } catch (error) {
@@ -67,8 +92,19 @@ export async function markAllAsRead(req: AuthRequest, res: Response) {
   }
 
   try {
+    // Build filter based on user role
+    let filter: any = { isRead: false };
+    
+    if (req.user.role === 'agent') {
+      // Agents can only mark notifications for their assigned users as read
+      const assignedUsers = await User.find({ assignedAgent: req.user.id }).select('_id');
+      const assignedUserIds = assignedUsers.map(u => u._id);
+      filter.userId = { $in: assignedUserIds };
+    }
+    // Admin can mark all notifications as read (no userId filter)
+
     await Notification.updateMany(
-      { isRead: false },
+      filter,
       { isRead: true }
     );
 
