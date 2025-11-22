@@ -773,37 +773,41 @@ export default function UsersPage() {
                   Actions
                   </Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  <Tooltip title="Edit User">
-                    <Button 
-                      variant="outlined" 
-                      size="small" 
-                      startIcon={<EditIcon />}
-                      onClick={() => {
-                        setViewUserOpen(false);
-                        handleEdit(viewUser);
-                      }}
-                    >
-                      Edit
-                    </Button>
-                  </Tooltip>
-                  
-                  {(currentUser?.role === 'admin' || (currentUser?.role === 'agent' && viewUser?.assignedAgent === currentUser?.id)) && (
-                    <Tooltip title="Change Password">
-                      <Button 
-                        variant="outlined" 
-                        size="small" 
-                        startIcon={<LockIcon />}
-                        onClick={() => {
-                          setViewUserOpen(false);
-                          handlePasswordChange(viewUser);
-                        }}
-                      >
-                        Change Password
-                      </Button>
-                    </Tooltip>
+                  {/* Admin-only actions */}
+                  {currentUser?.role === 'admin' && (
+                    <>
+                      <Tooltip title="Edit User">
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          startIcon={<EditIcon />}
+                          onClick={() => {
+                            setViewUserOpen(false);
+                            handleEdit(viewUser);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                      </Tooltip>
+                      
+                      <Tooltip title="Change Password">
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          startIcon={<LockIcon />}
+                          onClick={() => {
+                            setViewUserOpen(false);
+                            handlePasswordChange(viewUser);
+                          }}
+                        >
+                          Change Password
+                        </Button>
+                      </Tooltip>
+                    </>
                   )}
 
-                  {viewUser.status === 'active' ? (
+                  {/* Ban button - available for both admin and agent */}
+                  {viewUser.status === 'active' && (
                     <Tooltip title="Ban User">
                       <Button 
                         variant="outlined" 
@@ -818,68 +822,62 @@ export default function UsersPage() {
                         Ban
                       </Button>
                     </Tooltip>
-                  ) : viewUser.status === 'disabled' ? (
-                    <>
-                      <Tooltip title="Activate User">
-                        <Button 
-                          variant="outlined" 
-                          color="success"
-                          size="small" 
-                          startIcon={<CheckCircleIcon />}
-                          onClick={() => {
-                            setViewUserOpen(false);
-                            activateUser(viewUser._id);
-                          }}
-                        >
-                          Activate
-                        </Button>
-                      </Tooltip>
-                      <Tooltip title="Ban User">
-                        <Button 
-                          variant="outlined" 
-                          color="warning"
-                          size="small" 
-                          startIcon={<GavelIcon />}
-                          onClick={() => {
-                            setViewUserOpen(false);
-                            banUser(viewUser._id);
-                          }}
-                        >
-                          Ban
-                        </Button>
-                      </Tooltip>
-                    </>
-                  ) : viewUser.status === 'banned' ? (
-                    <Tooltip title="Activate User">
+                  )}
+
+                  {/* Activate button - available for both admin and agent (to unban) */}
+                  {viewUser.status === 'banned' && (
+                    <Tooltip title="Activate User (Unban)">
                       <Button 
                         variant="outlined" 
                         color="success"
                         size="small" 
-                        startIcon={<CheckCircleIcon />}
+                        startIcon={<GavelIcon />}
                         onClick={() => {
                           setViewUserOpen(false);
                           activateUser(viewUser._id);
                         }}
                       >
-                        Activate
+                        Unban
                       </Button>
                     </Tooltip>
-                  ) : null}
+                  )}
 
-                  <Tooltip title="Delete User">
-                    <Button 
-                      variant="outlined" 
-                      color="error"
-                      size="small" 
-                      startIcon={<DeleteIcon />}
-                      onClick={() => {
-                        setViewUserOpen(false);
-                        handleDelete(viewUser._id);
-                      }}
-                    >
-                      Delete
-                    </Button>
-                  </Tooltip>
+                  {/* Admin-only: Activate disabled users and Delete buttons */}
+                  {currentUser?.role === 'admin' && (
+                    <>
+                      {viewUser.status === 'disabled' && (
+                        <Tooltip title="Activate User">
+                          <Button 
+                            variant="outlined" 
+                            color="success"
+                            size="small" 
+                            startIcon={<CheckCircleIcon />}
+                            onClick={() => {
+                              setViewUserOpen(false);
+                              activateUser(viewUser._id);
+                            }}
+                          >
+                            Activate
+                          </Button>
+                        </Tooltip>
+                      )}
+
+                      <Tooltip title="Delete User">
+                        <Button 
+                          variant="outlined" 
+                          color="error"
+                          size="small" 
+                          startIcon={<DeleteIcon />}
+                          onClick={() => {
+                            setViewUserOpen(false);
+                            handleDelete(viewUser._id);
+                          }}
+                        >
+                          Delete
+                        </Button>
+                      </Tooltip>
+                    </>
+                  )}
                 </Box>
               </Box>
             </Box>

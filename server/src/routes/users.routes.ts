@@ -79,7 +79,7 @@ router.get('/', jwtAuth, requireRole('admin', 'agent'), listUsers);
  *       400: { description: Invalid input }
  *       404: { description: User not found }
  */
-router.patch('/:id', jwtAuth, requireRole('admin', 'agent'), updateUser);
+router.patch('/:id', jwtAuth, requireRole('admin'), updateUser);
 
 /**
  * @swagger
@@ -151,7 +151,7 @@ router.patch('/:id/activate', jwtAuth, requireRole('admin', 'agent'), activateUs
  *       200: { description: User deleted }
  *       404: { description: User not found }
  */
-router.delete('/:id', jwtAuth, requireRole('admin', 'agent'), deleteUser);
+router.delete('/:id', jwtAuth, requireRole('admin'), deleteUser);
 
 /**
  * @swagger

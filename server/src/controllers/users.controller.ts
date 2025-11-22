@@ -129,20 +129,12 @@ const updateUserSchema = z.object({
 });
 
 export async function updateUser(req: AuthRequest, res: Response) {
-  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'agent')) {
+  if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Forbidden' });
   }
   
   const { id } = req.params;
   if (!Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid user id' });
-  
-  // Check if agent is trying to update a user they don't own
-  if (req.user.role === 'agent') {
-    const userToUpdate = await User.findById(id);
-    if (!userToUpdate || userToUpdate.assignedAgent?.toString() !== req.user.id) {
-      return res.status(403).json({ error: 'You can only update your assigned users' });
-    }
-  }
   
   const parse = updateUserSchema.safeParse(req.body);
   if (!parse.success) return res.status(400).json({ error: 'Invalid input', details: parse.error.issues });
@@ -243,20 +235,12 @@ export async function activateUser(req: AuthRequest, res: Response) {
 }
 
 export async function deleteUser(req: AuthRequest, res: Response) {
-  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'agent')) {
+  if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({ error: 'Forbidden' });
   }
   
   const { id } = req.params;
   if (!Types.ObjectId.isValid(id)) return res.status(400).json({ error: 'Invalid user id' });
-  
-  // Check if agent is trying to delete a user they don't own
-  if (req.user.role === 'agent') {
-    const userToDelete = await User.findById(id);
-    if (!userToDelete || userToDelete.assignedAgent?.toString() !== req.user.id) {
-      return res.status(403).json({ error: 'You can only delete your assigned users' });
-    }
-  }
   
   const user = await User.findByIdAndDelete(id);
   if (!user) return res.status(404).json({ error: 'User not found' });
