@@ -18,6 +18,7 @@ import CommissionPage from './pages/CommissionPage';
 import CardsPage from './pages/CardsPage';
 import AppSettingsPage from './pages/AppSettingsPage';
 import GameRulesPage from './pages/GameRulesPage';
+import AgentPaymentHistoryPage from './pages/AgentPaymentHistoryPage';
 
 function LoadingScreen() {
   return (
@@ -89,6 +90,7 @@ function AppRoutes() {
       <Route path="/commission" element={<ProtectedRoute><DashboardLayout><CommissionPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/app-settings" element={<ProtectedRoute><DashboardLayout><AppSettingsPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="/game-rules" element={<ProtectedRoute><DashboardLayout><GameRulesPage /></DashboardLayout></ProtectedRoute>} />
+      <Route path="/payment-history" element={<ProtectedRoute><DashboardLayout><AgentPaymentHistoryPage /></DashboardLayout></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );

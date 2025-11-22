@@ -80,6 +80,50 @@ export const walletApi = createApi({
       }),
       invalidatesTags: ['Wallet'],
     }),
+    getPaymentHistory: builder.query<{
+      transactions: Array<{
+        _id: string;
+        type: 'wallet_transaction' | 'bid' | 'withdrawal';
+        amount: number;
+        transactionType: string;
+        walletType: 'main' | 'bonus';
+        paymentMode: 'UPI' | 'Wallet';
+        note?: string;
+        status?: string;
+        processedBy?: {
+          _id: string;
+          fullName: string;
+          email: string;
+          gameId: string;
+          role: string;
+        };
+        createdAt: string;
+        updatedAt?: string;
+        gameId?: string;
+        gameStatus?: string;
+        cardName?: string;
+        cardType?: string;
+        cardSuit?: string;
+        quantity?: number;
+        cardPrice?: number;
+      }>;
+      pagination: {
+        currentPage: number;
+        totalPages: number;
+        totalTransactions: number;
+        hasNextPage: boolean;
+        hasPrevPage: boolean;
+      };
+    }, { page?: number; limit?: number } | void>({
+      query: (params) => {
+        const searchParams = new URLSearchParams();
+        if (params?.page) searchParams.set('page', String(params.page));
+        if (params?.limit) searchParams.set('limit', String(params.limit));
+        const qs = searchParams.toString();
+        return `wallet/payment-history${qs ? `?${qs}` : ''}`;
+      },
+      providesTags: ['Wallet'],
+    }),
   }),
 });
 
@@ -89,4 +133,5 @@ export const {
   useGetUserTransactionsQuery,
   useRechargeWalletMutation,
   useManualDebitMutation,
+  useGetPaymentHistoryQuery,
 } = walletApi; 

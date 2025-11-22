@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AppBar, Toolbar, Typography, IconButton, Drawer, List, ListItem, ListItemIcon, ListItemText, ListItemButton, Box, CssBaseline, Divider, Chip, Avatar, Menu, MenuItem, ListItemAvatar, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText, TextField, Button, Alert } from '@mui/material';
-import { Dashboard, People, AccountBalanceWallet, SportsEsports, Menu as MenuIcon, Logout, AccountCircle, Percent, Casino, Settings, PhotoLibrary, MoneyOff, Lock, ChevronLeft, ChevronRight, Rule } from '@mui/icons-material';
+import { Dashboard, People, AccountBalanceWallet, SportsEsports, Menu as MenuIcon, Logout, AccountCircle, Percent, Casino, Settings, PhotoLibrary, MoneyOff, Lock, ChevronLeft, ChevronRight, Rule, History } from '@mui/icons-material';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth';
 import { useGetMyWalletQuery } from '../api/walletApi';
@@ -23,12 +23,19 @@ const changePasswordSchema = z.object({
 
 type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
 
-const navItems = [
+const navItems: Array<{
+  label: string;
+  icon: React.ReactNode;
+  path: string;
+  adminOnly?: boolean;
+  agentOnly?: boolean;
+}> = [
   { label: 'Dashboard', icon: <Dashboard />, path: '/' },
   { label: 'Users', icon: <People />, path: '/users' },
   { label: 'Wallet', icon: <AccountBalanceWallet />, path: '/wallet' },
   { label: 'Withdrawals', icon: <MoneyOff />, path: '/withdrawals' },
   { label: 'Games', icon: <SportsEsports />, path: '/games' },
+  { label: 'Payment History', icon: <History />, path: '/payment-history', agentOnly: true },
   { label: 'Cards', icon: <Casino />, path: '/cards', adminOnly: true },
   // { label: 'Bids', icon: <Gavel />, path: '/bids' },
   // { label: 'Notifications', icon: <Notifications />, path: '/notifications', adminOnly: true },
@@ -117,6 +124,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {navItems.map((item) => {
           // Only show adminOnly items for admin users
           if (item.adminOnly && currentUser?.role !== 'admin') {
+            return null;
+          }
+          // Only show agentOnly items for agent users
+          if (item.agentOnly && currentUser?.role !== 'agent') {
             return null;
           }
           const active = isActive(item.path);
