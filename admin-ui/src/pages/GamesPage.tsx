@@ -78,7 +78,7 @@ export default function GamesPage() {
   const [tabValue, setTabValue] = useState(0);
   const [paginationModel, setPaginationModel] = useState<{ page: number; pageSize: number }>({
     page: 0,
-    pageSize: 10,
+    pageSize: 100,
   });
 
   const currentStatus =
@@ -1338,14 +1338,14 @@ export default function GamesPage() {
             </Typography>
             {(() => {
               // Calculate lowest pool card
-              const cardPools = new Map();
+              const cardPools = new Map<string, number>();
               gameBids.forEach(bid => {
                 const currentPool = cardPools.get(bid.cardName) || 0;
                 cardPools.set(bid.cardName, currentPool + bid.totalAmount);
               });
               
               let lowestPoolAmount = Infinity;
-              let lowestPoolCard = null;
+              let lowestPoolCard: string | null = null;
               
               for (const [cardName, poolAmount] of cardPools) {
                 if (poolAmount < lowestPoolAmount) {

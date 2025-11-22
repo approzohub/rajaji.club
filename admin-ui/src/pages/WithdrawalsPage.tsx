@@ -11,7 +11,7 @@ type User = import('../api/usersApi').User;
 export default function WithdrawalsPage() {
   const [paginationModel, setPaginationModel] = useState<{ page: number; pageSize: number }>({
     page: 0,
-    pageSize: 10,
+    pageSize: 100,
   });
 
   const { data, isLoading, error } = useGetWithdrawalsQuery({

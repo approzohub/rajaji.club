@@ -547,7 +547,7 @@ export default function CardsPage() {
           key={`cards-grid-all-${refreshKey}-${allCards.length}-${allCards.filter(c => c.isActive).length}`}
           initialState={{
             pagination: {
-              paginationModel: { pageSize: 10 },
+              paginationModel: { pageSize: 100 },
             },
           }}
           pageSizeOptions={[10, 25, 50]}
@@ -581,7 +581,7 @@ export default function CardsPage() {
           getRowId={(row) => row._id}
           initialState={{
             pagination: {
-              paginationModel: { pageSize: 10 },
+              paginationModel: { pageSize: 100 },
             },
           }}
           pageSizeOptions={[10, 25, 50]}
@@ -614,7 +614,7 @@ export default function CardsPage() {
           getRowId={(row) => row._id}
           initialState={{
             pagination: {
-              paginationModel: { pageSize: 10 },
+              paginationModel: { pageSize: 100 },
             },
           }}
           pageSizeOptions={[10, 25, 50]}

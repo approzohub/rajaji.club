@@ -180,7 +180,7 @@ export default function CMSPage() {
           columns={columns}
           getRowId={(row) => row._id}
           autoHeight
-          initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+          initialState={{ pagination: { paginationModel: { pageSize: 100 } } }}
           pageSizeOptions={[10, 25, 50]}
           disableRowSelectionOnClick
           sx={{

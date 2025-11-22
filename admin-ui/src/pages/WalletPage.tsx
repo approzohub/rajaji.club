@@ -22,7 +22,7 @@ const normalizePhoneNumber = (value: string) => value.replace(/\D/g, '');
 export default function WalletPage() {
   const [paginationModel, setPaginationModel] = useState<{ page: number; pageSize: number }>({
     page: 0,
-    pageSize: 10,
+    pageSize: 100,
   });
 
   const { data, isLoading, error, refetch } = useGetWalletsQuery({
@@ -483,7 +483,7 @@ export default function WalletPage() {
                 getRowId={(row) => row._id}
                 initialState={{
                   pagination: {
-                    paginationModel: { pageSize: 10 },
+                    paginationModel: { pageSize: 100 },
                   },
                 }}
                 pageSizeOptions={[5, 10, 25, 50]}
